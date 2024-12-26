@@ -22,6 +22,13 @@ public:
     int wuppie(int c=0);
 };
 
+void func(int a, int b);
+void func(int c, int d);
+
+void func(int a, int b = 10){
+    return;
+}
+
 class Dummy : public Student {
 public:
     int myMethod(){};
@@ -40,10 +47,11 @@ private:
 };
 
 void fkt(int&, char); // Funktionsdeklaration
-int &fkt1(const int &, const char);
+int &fkt1(int &b, const char);
 
 int add_5(int x) {
     x += 5;
+    return x;
     return x;
 }
 
@@ -53,16 +61,23 @@ struct input2
 };
 
 
-int fun1(int a, int b);
-int fun1(int a, int b);
-int func1 (int &){
+int fun1(int a, int);
+int fun1(int a, int b = 10);
+int func1 (int x){
     return 1;
 };
 
 
 int main(){
     int aaa = 10;
-    aaa = func1(aaa);
+    aaa = func1(add_5(10+10));
+    printf("%d\n", aaa);
+
+    char bb = 'b';
+    char bbb = 'bb';
+    printf("%d\n", 10-true);
+
+
 
     int i=2, ii, iii;
     int j=9;
@@ -70,6 +85,11 @@ int main(){
     r=10;        // aendert i: i==10
     r=j;         // aendert i: i==9
     int &l=r;
+
+    int j=9;
+    int &kk = j;
+    int jj = 9;
+    int &ii = &jj;
 
     const Dummy a;
     Dummy b(37);
@@ -85,6 +105,8 @@ int main(){
     int k[3];
     char n = 'a';
     Student s = Student(), s1 = Student();
+    Student t[10];
+    t[1].abc(10);
     s.abc(10);
     i = 10; j = 20; k[0] = 30; n = 'a'; s = Student(); s.name = 2;
     int myArray2[] = {1, 2, 3, 4}, myArray3[12+1] = {1, 2, 3, 4};

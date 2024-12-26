@@ -43,8 +43,10 @@ public class Main {
       //ast.scope.print();
       //ast.visitChild(ast);
 
+      /*
       Interpreter interpreter = new Interpreter();
       interpreter.interpret(ast);
+       */
     }
   }
 }

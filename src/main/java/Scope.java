@@ -1,47 +1,23 @@
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Scope {
     // key - value
-    public Map<String, Symbol> scope = new HashMap<>();
+    // LinkedHashMap um die Reihenfolge zu behalten und um Funktionsparameter vergleichen zu können
+    public Map<String, Symbol> scope = new LinkedHashMap<>();
     Scope prev;
 
     public Scope(Scope p){
         this.prev = p;
     }
 
-    /*
-    // Name - Type
-    public Symbol bind(String key, String value){
-        if (scope.containsKey(key)){
-            System.out.println("Variable: '" + key + "' already declared");
-            return null;
-        }
-        scope.put(key, new Symbol(key, new SymbolType(value)));
-        return scope.get(key);
-    }
-     */
-
     // Name - Type
     public Symbol bind(Symbol s){
-        if ((s.type.getName().equals("BUILTIN") ||
-            s.type.getName().equals("FUNCTION") ||
-            s.type.getName().equals("STRUCT")
-          ) && !scope.containsKey(s.name)
-        ){
-            scope.put(s.name, s);
-            return scope.put(s.name, s);
-        } else if (!scope.containsKey(s.name) && resolve(s.type.getName()).name != null){
-            //System.out.println("Variable: '" + s.name + "' declared");
-            return scope.put(s.name, s);
-        } else {
-            throw new RuntimeException("Variable: '" + s.name + "' already declared");
-        }
+        return scope.put(s.name, s);
     }
-
-
 
     public Symbol resolve(String key){
         if (key == null) return null;
@@ -53,8 +29,37 @@ public class Scope {
             return prev.resolve(key);
         } else {
             return null;
-            //throw new RuntimeException("Variable: '" + key + "' not declared");
         }
+    }
+
+    public Symbol resolveLocal(String key){
+        if (key == null) return null;
+        return scope.get(key);
+    }
+
+    public Symbol[] resolveFunctions(String key){
+        ArrayList<Symbol> functions = new ArrayList<>();
+        if (key == null) return null;
+
+        for (Map.Entry<String, Symbol> entry : scope.entrySet()) {
+            if (entry.getValue().type.getName().equals("FUNCTION")) {
+                if (entry.getKey().equals(key)) {
+                    functions.add(entry.getValue());
+                }
+            }
+        }
+        if (prev != null){
+            Symbol[] prevFunctions = prev.resolveFunctions(key);
+            if (prevFunctions != null) {
+                for (Symbol s : prevFunctions) {
+                    functions.add(s);
+                }
+            }
+        }
+        if (functions.size() == 0) {
+            return null;
+        }
+        return functions.toArray(new Symbol[0]);
     }
 
     public void print(){

@@ -32,17 +32,13 @@ public class AST {
 
         // Assign
         INTASSIGN,
-        INTARRAYASSIGN,
+        ARRAYASSIGN,
         CHARASSIGN,
-        CHARARRAYASSIGN,
         BOOLASSIGN,
-        BOOLARRAYASSIGN,
         ASSIGN,
 
         // Declaration
-        CHARDECLARATION,
-        INTDECLARATION,
-        BOOLDECLARATION,
+        DECLARATION,
         ARRAYDECLARATION,
 
         ASSIGNARRAYELEMENT,
@@ -55,8 +51,6 @@ public class AST {
         FUNCTION_CALL,
         FUNCTION_DEF,
         FUNCTION_DEC,
-        FUNCTION_PARAM,
-        FUNCTION_PARAM_REF,
         RETURN,
         RETURNTYPE,
 
@@ -97,6 +91,7 @@ public class AST {
     Symbol symbol;
     Boolean isConst;
 
+    String rtype;
 
     public AST(String v, Types t, AST p){
         this.value = v;
@@ -121,10 +116,10 @@ public class AST {
     public void printAST(AST node, String prefix) {
         if (node.kinder.isEmpty()) {
             // Blattknoten
-            System.out.println(prefix + "- [Leaf] " + node.asttype + " (" + node.value + ")");
+            System.out.println(prefix + "- [Leaf] " + node.asttype + " (" + node.value + ")" + " (" + node.rtype + ")");
         } else {
             // Innerer Knoten
-            System.out.println(prefix + "- [Node] " + node.asttype + " (" + node.value + ")");
+            System.out.println(prefix + "- [Node] " + node.asttype + " (" + node.value + ")" + " (" + node.rtype + ")");
         }
         // Rekursiv alle Kinder ausgeben
         for (AST child : node.kinder) {

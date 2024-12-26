@@ -1,11 +1,11 @@
-int i = 10;
-
-int func1 (int a, int b) {
-return a + b;
+class Person {
+    int age;
+    char name;
 };
-
-int func2 (int a, int b) {
-    return a - b;
+Person p;
+int a = 10;
+void func(int a, Person p, int &, bool z = true) {
+    int b;
+    int c = a + b;
 }
-
-int func3 (int a, int &);
+//func(10, p, a, true);

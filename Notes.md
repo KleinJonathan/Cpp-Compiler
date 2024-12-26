@@ -44,6 +44,7 @@ c++ Klassen und funktionsdeclaration muss vor ihrem aufruf stehen
 - In c++ läuft der Compiler ein mal durch den Code und Prüfe, ob die Variablen bekannt sind. 
 - Bei Funktionen wird geprüft, ob diese deklariert sind und beim Aufruf wird geprüft, ob Parameter und Rückgabetyp passen
 - Bei Klassen wird auf eine Deklaration geachtet. Sie müssen nicht definiert sein, deklariert reicht erstmal 
+- Konstruktoren liefern ein Objekt zurück
 
 Zuweisungen z.b. c = 4 sind expressions und liefern einen Wert zurück 
 Alle Werte != 0 sind im Boolschen Kontext True. Nur 0 == False 
@@ -67,6 +68,8 @@ public:
 int Fluppie::wuppie(int c) { ... }
 ```
 
+Funktionen dürfen nicht in Funktionen definiert werden 
+
 Was passiert bei Klassenvariablen
 
 ![[Pasted image 20241214205821.png|600]]
@@ -80,16 +83,28 @@ Was passiert bei Klassenvariablen
 	- Destruktor
 	- Abstrakte Methoden 
 	- Konstruktor - Prüfen, ob dieser zu der Klasse gehört 
-- Anführungszeichen " und ' nutzbar machen
+	- Super Konstruktor 
+	- Funktionsaufrufe von Klassen a.foo();
+- Funktionen
+	- Return - Rückgabetype prüfen mit Rückgabetyp der Funktion
+	- void fkt(int&, char a); // Funktionsdeklaration  
+	- Es muss im AST gespeichert werden, ob Funktionsparameter referenzen sind oder nicht 
+	- Referenzen in funktionsdeklaration int func(int &)
+	- Prüfen der ob ein Return vorhanden ist 
+	- Rückgabewert von Funktionen ref bsp: int &fkt1(const int &, const char);
+- Anführungszeichen " und ' nutzbar machen Char 'abc'?
 - CONST REF VOID werden im AST noch nicht wirklich beachtet 
-- Rückgabewert von Funktionen ref bsp: int &fkt1(const int &, const char);
-- Funktionsaufrufe von Klassen a.foo();
 - Beim ändern von Daten prüfen, ob diese const sind oder nicht 
 - Arrays aus Objekten funktionieren aktuell nicht 
-- int &i = &j
 - int &d = b.age;
-- Referenzen in funktionsdeklaration int func(int &)
-- Es muss im AST gespeichert werden, ob Funktionsparameter referenzen sind oder nicht 
+  int &fkt1(const int &, const char a);
+- Virtual 
+
+// Check ob es sich um ein Array handelt
+Person p;  
+p.age = 10;  
+p.name = 'a';  
+p[10] = 10;
 
 # Grammar 
 - [x] Basisdatentypen: `bool`, `int`, `char`
@@ -160,3 +175,27 @@ Fehlerbehandungen und Null checks
 Funktionen und wiederholenden Code auslagern 
 Code Kommentieren 
 Was ist mit Rekursivität 
+Was passiert, wenn ich in  &x = y; und dann &x = z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Keras Methoden kennen 
+Basics und Beispiele aus dem Vorlesungen und Übungen 
+
+
+
+
+
+![[Pasted image 20241218090543.png]]
+Das sollte in der Semantischen Analyse ein Fehler werfen, da 

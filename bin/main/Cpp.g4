@@ -36,13 +36,13 @@ basetype            : TYPE
                     ;
 declvar             : ID;
 declarray           : ID '[' expr ']';
-declrefvar          : const? TYPE REF ID;
+defrefvar           : const? basetype REF ID;
+declrefvar          : const? basetype REF;
 decl                : basetype declvar
                     | basetype declarray
                     ;
 
 assignvar           : ID SET expr;
-assignrefvar        : ID SET ID;
 assignarrayelement  : ID '[' expr ']' SET expr                                           # assignarrayelem
                     | ID '[' expr ']' '++'                                               # incarray
                     | ID '[' expr ']' '--'                                               # decarray
@@ -50,9 +50,10 @@ assignarrayelement  : ID '[' expr ']' SET expr                                  
 assignnewarray      : ID '[' arraysize? ']' SET '{' (expr)(',' expr)* '}';
 arraysize           : expr;
 // Klassenvariablen
-assignclassvar      : ID'.'ID SET expr;
-assignnewclass      : ID                            // Student s;
-                    | REF ID                        // Student &s = Student();
+assignclassvar      : ID'.'ID SET expr
+                    | ID '[' expr ']' '.' ID SET expr
+                    ;
+assignnewclass      : REF ID                        // Student &s = Student();
                     | ID SET callfunc                 //Student s = Student();
                     | ID '(' callparamlist ')'              // Student s(5);
                     | ID SET callparamlist              // Student2 &s2 = s1;
@@ -60,7 +61,7 @@ assignnewclass      : ID                            // Student s;
 
 declnew             : basetype (declarray | declvar)(',' (declarray | declvar))*
                     ;
-assignnew           : const? basetype REF? (assignvar | assignnewarray | assignnewclass ) (',' (assignvar | assignnewarray | assignnewclass))*       //# assignwithoutref
+assignnew           : const? basetype REF? (assignvar | assignnewarray | assignnewclass | defrefvar) (',' (| assignvar | assignnewarray | assignnewclass | defrefvar))*       //# assignwithoutref
                     //| const? TYPE REF assignrefvar (',' REF assignrefvar)*                                # assignwithref
                     ;
 assignold           : (assignvar | assignarrayelement | assignclassvar | assignnewclass) (',' (assignvar | assignarrayelement | assignclassvar | assignnewclass))*;
@@ -99,7 +100,8 @@ callfunc            : ID '(' callparamlist ')'
                     ;
 
 defparamlist        : ((defparam)(',' defparam)* | );
-defparam            : (decl | assignnew | assignnewclass | declrefvar | const? basetype '&' | );
+//defparam            : (decl | assignnew | const? declnew | assignnewclass | declrefvar | const? basetype '&' | );
+defparam            : (decl | assignnew | const? declnew | defrefvar | declrefvar | );
 
 callparamlist       : ((callparam)(',' callparam)* | );
 callparam           : expr;
@@ -138,7 +140,7 @@ expr                : expr com expr                                             
                     | expr '-=' expr                                                            # subeq
                     | expr '--'                                                                 # dec
                     | callfunc                                                                  # call
-                    | REF expr                                                                  # refexpr
+                    | ID'.'ID                                                                   # classvar
                     | ID                                                                        # id
                     | NUM                                                                       # num
                     | CHAR                                                                      # char
