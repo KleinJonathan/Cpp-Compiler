@@ -16,7 +16,7 @@ stmt                : declfunc ';'                                              
                     | builtin '(' expr (',' expr)* ')' ';'                                          # builtinstmt
                     | classdef                                                                      # classsstm
                     | openscope stmt+ closescope                                                    # block
-                    | RETURN (expr | ) ';'                                                          # return
+                    | RETURN expr? ';'                                                               # return
                     | expr ';'                                                                      # exprstmt
                     ;
 ////
@@ -54,6 +54,7 @@ assignclassvar      : ID'.'ID SET expr
                     | ID '[' expr ']' '.' ID SET expr
                     ;
 assignnewclass      : REF ID                        // Student &s = Student();
+                    | ID
                     | ID SET callfunc                 //Student s = Student();
                     | ID '(' callparamlist ')'              // Student s(5);
                     | ID SET callparamlist              // Student2 &s2 = s1;
@@ -69,9 +70,9 @@ assignold           : (assignvar | assignarrayelement | assignclassvar | assignn
 ////
 
 
-// Klassen
-classdef            : (EXPLIZIT | ABSTRACT)?  'class' ID vererbung? '{' ('public' ':' (constructor | stmt)*)? ('private' ':' (constructor | stmt)*)? '}' ';'
-                    | (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? '{' (constructor | stmt)* '}' ';'
+// Klassen - Private und Public werden nicht weiter ausgewertet. Es wird nur erkannt
+classdef            : (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? '{' ('public' ':' (constructor | destruct | abstractfunc /*| overridefunc*/ | stmt)*)? ('private' ':' (constructor | destruct /*| overridefunc*/ | abstractfunc | stmt )*)? '}' ';'
+                    | (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? '{' (constructor | destruct /*| overridefunc*/ | abstractfunc | stmt)* '}' ';'
                     ;
 //Konstruktor hat keine Rückgabe == Unterscheidung zu Funktionen
 constructor         : ID '(' defparamlist ')'  openscope body? closescope   ';'?
@@ -79,10 +80,17 @@ constructor         : ID '(' defparamlist ')'  openscope body? closescope   ';'?
                     | ID '(' defparamlist ')' ';'
                     | ID '(' ')' SET 'default' ';'
                     ;
+destruct            : '~' ID '(' ')' openscope body? closescope ';'?
+                    | '~' ID '(' ')' ';'?
+                    | 'virtual' '~' ID '(' ')' ';'?
+                    | 'virtual' '~' ID '(' ')' openscope body? closescope ';'?
+                    ;
+abstractfunc        : 'virtual' (basetype REF?| VOID) ID '(' defparamlist ')' 'const' '=' '0' ';'?;
+//overridefunc        : (basetype REF?| VOID) ID '(' defparamlist ')' const? OVERRIDE openscope body closescope ';'?;
 initlist            : ( ID '(' expr ')')
                     | ( ID '(' expr ',' expr ')')
                     ;
-vererbung           : ':' 'public' ID
+vererbung           : ':' 'public'? ID
                     ;
 ////
 ////
@@ -90,8 +98,8 @@ vererbung           : ':' 'public' ID
 
 // Function
 declfunc            : (basetype REF?| VOID) ID '(' defparamlist ')' ';'? ;
-deffunc             : (basetype REF?| VOID) ID '(' defparamlist ')' openscope body closescope ';'?              # funcdef
-                    | (basetype REF?| VOID)? ID'::'ID '(' defparamlist ')' openscope body closescope  ';'?      # classfunc
+deffunc             : (basetype REF?| VOID) ID '(' defparamlist ')' (const? OVERRIDE)? openscope body closescope ';'?       # funcdef
+                    | (basetype REF?| VOID)? ID'::'ID '(' defparamlist ')' openscope body closescope  ';'?                  # classfunc
                     ;
 // Es kann nicht unterschieden werden zwischen einem Funktionsaufruf und einem Konstruktoraufruf, der ja auch eine Funktion ist
 callfunc            : ID '(' callparamlist ')'
@@ -141,8 +149,9 @@ expr                : expr com expr                                             
                     | expr '--'                                                                 # dec
                     | callfunc                                                                  # call
                     | ID'.'ID                                                                   # classvar
-                    | ID                                                                        # id
+                    | ID '[' expr ']'                                                           # arrayelem
                     | NUM                                                                       # num
+                    | ID                                                                        # id
                     | CHAR                                                                      # char
                     | BOOL                                                                      # bool
                     ;
@@ -169,6 +178,7 @@ const               : CONST;
 // Lexer
 OPENSCOPE   : '{';
 CLOSESCOPE  : '}';
+OVERRIDE    : 'override';
 RETURN      : 'return';
 IF          : 'if';
 ELSE        : 'else';
@@ -198,8 +208,9 @@ PUBLIC      : 'public';
 PRIVATE     : 'private';
 ABSTRACT    : 'abstract';
 REF         : '&';
-ID          : [a-zA-Z_][a-zA-Z0-9_]*;
 NUM         : [0-9]+;
-CHAR        : '\'' (~[\n\r"])* '\'';
-COMMENT     : '//' ~[\n\r]* -> skip ;
+ID          : [a-zA-Z_][a-zA-Z0-9_]*;
+CHAR        : '\'' (~[\n\r"])? '\''; // Hier habe ich no Greedy gewählt, damit zum Beipeiel "Person p1(20, 'A'); // age=20, name='A'" erkannt wird
+COMMENTLINE : '//' ~[\n\r]* -> skip;
+COMMENTBLOCK: '/*' .*? '*/' -> skip;
 WS          : [ \t\n]+ -> skip ;

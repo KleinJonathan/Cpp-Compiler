@@ -3,15 +3,10 @@ created: 2024-12-11 21-21-04
 referenzen: 
 quellen:
 ---
+C++ Version: 11
+
 # Fragen 
-- try catch
-- public und protate und abstrakte klassen und methoden
-- Structs 
 - mehrdimensionale Arrays?
-- using / namespaces
-- vektoren 
-- typedef 
-- alias
 
 # Notizen 
 - Referenzen auf Arrays sind verboten 
@@ -38,7 +33,6 @@ Scope
 - Zu beginn in den Basisscope alle bekannten Typen und Buildtins integrieren. Genauso auch mit Schlüsselwörtern wie for ...
 - Wenn Variablen Deklariert oder Definiert werden, füge ich diese zum Scope hinzu. 
 - Vor dem Hinzufügen muss allerdings geprüft werden, ob diese bereits in dem aktuellen Scope existiert 
-- Variablen können direkt beim 
 
 c++ Klassen und funktionsdeclaration muss vor ihrem aufruf stehen 
 - In c++ läuft der Compiler ein mal durch den Code und Prüfe, ob die Variablen bekannt sind. 
@@ -46,9 +40,10 @@ c++ Klassen und funktionsdeclaration muss vor ihrem aufruf stehen
 - Bei Klassen wird auf eine Deklaration geachtet. Sie müssen nicht definiert sein, deklariert reicht erstmal 
 - Konstruktoren liefern ein Objekt zurück
 
-Zuweisungen z.b. c = 4 sind expressions und liefern einen Wert zurück 
-Alle Werte != 0 sind im Boolschen Kontext True. Nur 0 == False 
-if (c=4) => Zuweisung => liefert 4 zurück => true 
+Interpreter
+- Zuweisungen z.b. c = 4 sind expressions und liefern einen Wert zurück 
+- Alle Werte != 0 sind im Boolschen Kontext True. Nur 0 == False 
+- if (c=4) => Zuweisung => liefert 4 zurück => true 
 
 int a = 10;
 {
@@ -56,17 +51,7 @@ int a = 10;
 	int b = ::a; => Es wird mit :: auf die globale Variable zugegriffen 
 }
 
-Funktionen dürfen mehrfach deklariert aber nur einmal definiert sein
-```
-// .h
-class Fluppie {
-public:
-    int wuppie(int c=0);
-};
-
-// .cpp
-int Fluppie::wuppie(int c) { ... }
-```
+Von Classen mit Abstrakten Methoden darf ich kein Objekt erstellen 
 
 Funktionen dürfen nicht in Funktionen definiert werden 
 
@@ -75,38 +60,52 @@ Was passiert bei Klassenvariablen
 ![[Pasted image 20241214205821.png|600]]
 
 
-### Fehler oder Prüfen
-- Klassem
-	- Klasse - Initliste
-	- public / abstrakt Klassen
-	- Explizit
-	- Destruktor
-	- Abstrakte Methoden 
-	- Konstruktor - Prüfen, ob dieser zu der Klasse gehört 
-	- Super Konstruktor 
-	- Funktionsaufrufe von Klassen a.foo();
-- Funktionen
-	- Return - Rückgabetype prüfen mit Rückgabetyp der Funktion
-	- void fkt(int&, char a); // Funktionsdeklaration  
-	- Es muss im AST gespeichert werden, ob Funktionsparameter referenzen sind oder nicht 
-	- Referenzen in funktionsdeklaration int func(int &)
-	- Prüfen der ob ein Return vorhanden ist 
-	- Rückgabewert von Funktionen ref bsp: int &fkt1(const int &, const char);
-- Anführungszeichen " und ' nutzbar machen Char 'abc'?
-- CONST REF VOID werden im AST noch nicht wirklich beachtet 
-- Beim ändern von Daten prüfen, ob diese const sind oder nicht 
-- Arrays aus Objekten funktionieren aktuell nicht 
-- int &d = b.age;
-  int &fkt1(const int &, const char a);
-- Virtual 
+This muss mit eingebaut werden um dinge auflösen zu können oder um Objekte zu vergleichen 
+Destruktoren "müssen" nicht auf biegen und brechen vorhanden sein
 
-// Check ob es sich um ein Array handelt
-Person p;  
-p.age = 10;  
-p.name = 'a';  
-p[10] = 10;
+Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wir von der Elternmethode automatisch der Default Konstruktor verwendet (Konstruktor ohne Parameter) - Dieser muss aber auch existieren 
+
+### Fehler oder Prüfen
+- Zum Starten der Datei muss es eine Mainfunktion geben
+- Klassen
+	- Abstrakte Methoden können einen Funktionkörper haben 
+	- Explizite Klassen? 
+	- Destruktor
+	- Virtual 
+	- Grammatikregel "classfunc" ID::ID
+	- Grammatikregel "callfunc" ID::ID wird aktuell als normale Klassenfuntkion behandelt 
+	- Prüfen beim erstellen von Klassenobjekten, ob die Klasse abstrakte Methoden hat => Es kann kein Objekt erstellt werden
+- Funktionen
+	- Es muss im AST gespeichert werden, ob Funktionsparameter referenzen sind oder nicht 
+	- Prüfen der ob ein Return vorhanden ist ?
+	- Rückgabewert von Funktionen ref bsp: int &fkt1(const int &, const char);
+- CONST REF VOID im AST richtig behandelt? 
+- ```int &d = b.age; => Funktioniert nicht => Einfach weglassen? => Referenz auf AST Variable / Dort kann man leichter erkennen, ob es sich um eine Klassenvariabe handelt oder nicht```
+- ```int &fkt1(const int &, const char a);```
+- ```int xx  [2][2] = {{1, 2}, {3, 4}};```
+- Der Ausführbare Programmcode kann aktuell noch außerhalb von Funktionen stehen und ausgeführt werden 
+- "decl" in if und whileconn 
+- Referenz auf Klassenvariable 
+
+### Verbesserungen 
+- Kann in der Klasse AST der rtype auch über den Konstruktor gesetzt werden 
+- AST - 2 Konstruktoren (Nur einer?) 
+
 
 # Grammar 
+- [x] Basisdatentypen: `bool`, `int`, `char`
+- [x] Variablen
+- [x] Arrays
+- [x] C++-Referenzen
+- [x] Zuweisungen und Expressions
+- [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
+- [x] Funktionen (Definition, Deklaration, Aufrufe)
+- [x] Klassen (mit Attributen und Methoden)
+- [x] Einfach-Vererbung
+- [x] Polymorphie (dynamisch, statisch)
+- [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
+
+# AST 
 - [x] Basisdatentypen: `bool`, `int`, `char`
 - [x] Variablen
 - [x] Arrays
@@ -119,25 +118,11 @@ p[10] = 10;
 - [ ] Polymorphie (dynamisch, statisch)
 - [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
 
-# AST 
-- [x] Basisdatentypen: `bool`, `int`, `char`
-- [x] Variablen
-- [x] Arrays
-- [x] C++-Referenzen
-- [x] Zuweisungen und Expressions
-- [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
-- [x] Funktionen (Definition, Deklaration, Aufrufe)
-- [ ] Klassen (mit Attributen und Methoden)
-- [ ] Einfach-Vererbung
-- [ ] Polymorphie (dynamisch, statisch)
-- [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
-
 # TESTEN
 
 # Scope erstellen 
 -  declarray - assignnewarray
 - (Assign var - Klassen und Objekte )
-- Assign Array Element
 - Wo muss der Konstruktoraufruf geprüft werden 
 
 # AST Prüfen  

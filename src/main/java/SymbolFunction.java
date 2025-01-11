@@ -5,21 +5,21 @@ public class SymbolFunction extends Symbol {
     public AST functionAST;
     public Boolean decl;
     public List<String> paramTypes;
+    public boolean override;
+    public boolean abstractFunction = false;
 
-    public SymbolFunction(String name, String returnType, Scope scope, AST functionAST, Boolean decl, List<String> paramTypes) {
+    public SymbolFunction(String name, String returnType, Scope scope, AST functionAST, Boolean decl, List<String> paramTypes, boolean override, boolean abstractFunction) {
         super((paramTypes != null ? name + paramTypes.toString() : name), new SymbolType("FUNCTION"), new Scope(scope), false);
         this.returnType = returnType;
         this.functionAST = functionAST;
         this.decl = decl;
         this.paramTypes = paramTypes;
+        this.override = override;
+        this.abstractFunction = abstractFunction;
     }
 
     @Override
     public String toString() {
-        if (functionAST != null) {
-            return "SymbolFunction{name='" + name + "', type='" + type.getName() + "', returnType='" + returnType + "', functionAST='" + functionAST + "', decl='" + decl + "' + paramTypes='" + paramTypes + "'}";
-        } else {
-            return "SymbolFunction{name='" + name + "', type='" + type.getName() + "', returnType='" + returnType + "', decl='" + decl + "' + paramTypes='" + paramTypes + "'}";
-        }
+        return "SymbolFunction{name='" + name + "', type='" + type.getName() + "', returnType='" + returnType + "', decl='" + decl + "' + paramTypes='" + paramTypes + "'}" + ", override: " + override + ", abstractFunction: " + abstractFunction;
     }
 }

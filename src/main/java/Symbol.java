@@ -16,7 +16,7 @@ public class Symbol {
 
     @Override
     public String toString() {
-        return "Symbol{name='" + name + "', type='" + type.getName() + "'}";
+        return "Symbol{name='" + name + "', type='" + type.getName() + "', isConst='" + isConst + "'}";
     }
 }
 

@@ -1,11 +1,21 @@
 class Person {
-    int age;
-    char name;
+public:
+    virtual char toString() const = 0;
+    virtual ~Person() {} // Virtueller Destruktor
 };
-Person p;
-int a = 10;
-void func(int a, Person p, int &, bool z = true) {
-    int b;
-    int c = a + b;
+
+class Student : public Person {
+public:
+    char toString() const override {
+
+        return 'S';
+
+    }
+};
+
+int main() {
+    Student s;
+    //s.toString();
+    return 0;
 }
-//func(10, p, a, true);
+

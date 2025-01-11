@@ -35,7 +35,9 @@ public class AST {
         ARRAYASSIGN,
         CHARASSIGN,
         BOOLASSIGN,
-        ASSIGN,
+        ASSIGNOLD,
+        ASSIGNNEW,
+
 
         // Declaration
         DECLARATION,
@@ -45,6 +47,7 @@ public class AST {
         ARRAYSIZE,
         INCARRAY,
         DECARRAY,
+        ARRAYELEMENT,
 
         // Funktionen
         PARAMLIST,
@@ -66,6 +69,7 @@ public class AST {
         CLASS,
         CLASSDEF,
         CONSTRUCTOR,
+        DESTRUCTOR,
         PARENT,
 
         // IF ELSE WHILE
@@ -91,6 +95,7 @@ public class AST {
     Symbol symbol;
     Boolean isConst;
 
+    // Es wurde jedem Knoten möglichst ein Typ zugewiesen, um die spätere Typenüberprüfung zu erleichtern z.b. Mul...
     String rtype;
 
     public AST(String v, Types t, AST p){

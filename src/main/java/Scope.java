@@ -37,31 +37,6 @@ public class Scope {
         return scope.get(key);
     }
 
-    public Symbol[] resolveFunctions(String key){
-        ArrayList<Symbol> functions = new ArrayList<>();
-        if (key == null) return null;
-
-        for (Map.Entry<String, Symbol> entry : scope.entrySet()) {
-            if (entry.getValue().type.getName().equals("FUNCTION")) {
-                if (entry.getKey().equals(key)) {
-                    functions.add(entry.getValue());
-                }
-            }
-        }
-        if (prev != null){
-            Symbol[] prevFunctions = prev.resolveFunctions(key);
-            if (prevFunctions != null) {
-                for (Symbol s : prevFunctions) {
-                    functions.add(s);
-                }
-            }
-        }
-        if (functions.size() == 0) {
-            return null;
-        }
-        return functions.toArray(new Symbol[0]);
-    }
-
     public void print(){
         print(0);
     }

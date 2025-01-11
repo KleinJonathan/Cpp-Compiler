@@ -20,7 +20,8 @@ public class Clazz extends Struct {
 
     @Override
     public Symbol resolveMember(String name) {
-        Symbol s = scope.resolve(name);
+        if (name == null) return null;
+        Symbol s = scope.scope.get(name);
         if (s != null) return s;
         if (parentClazz != null) return parentClazz.resolveMember(name);
         return null;
