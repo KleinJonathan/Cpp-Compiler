@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 public class Main {
   public static void main(String... args) throws IOException {
     // Lesen der Datei
-    File file = new File("./src/main/java/input.cpp");
+    File file = new File("./src/main/java/cpp/input.cpp");
     // Buffer zum lesen der Datei
     BufferedReader br = new BufferedReader(new FileReader(file));
 
@@ -43,10 +43,10 @@ public class Main {
       //ast.scope.print();
       //ast.visitChild(ast);
 
-      /*
+      System.out.println("\n\nINTERPRETER: \n");
+
       Interpreter interpreter = new Interpreter();
       interpreter.interpret(ast);
-       */
     }
   }
 }

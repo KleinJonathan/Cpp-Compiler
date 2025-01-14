@@ -7,6 +7,8 @@ public class Symbol {
     public Scope scope;
     public Boolean isConst;
 
+    public String value;
+
     public Symbol(String name, SymbolType type, Scope scope, Boolean isConst) {
         this.name = name;
         this.type = type;

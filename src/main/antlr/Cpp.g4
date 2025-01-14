@@ -71,7 +71,7 @@ assignold           : (assignvar | assignarrayelement | assignclassvar | assignn
 
 
 // Klassen und Konstruktoren
-classdef            : (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? '{' (constructor | destruct /*| overridefunc | abstractfunc*/ | stmt)* '}' ';'
+classdef            : (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? openscope 'public' ':' (constructor | destruct /*| overridefunc | abstractfunc*/ | stmt)* closescope ';'
                     ;
 //Konstruktor hat keine Rückgabe == Unterscheidung zu Funktionen
 constructor         : ID '(' defparamlist ')'  openscope body? closescope   ';'?
@@ -132,17 +132,17 @@ whileconn           : WHILE '(' (expr | decl | assignnew | assignold | assigncla
 
 
 // Expression
-expr                : expr com expr                                                             # compare
-                    | expr '*' expr                                                             # mul
-                    | expr '*=' expr                                                            # muleq
+expr                : expr '*' expr                                                             # mul
+                    | ID '*=' expr                                                            # muleq
                     | expr '/' expr                                                             # div
-                    | expr '/=' expr                                                            # diveq
+                    | ID '/=' expr                                                            # diveq
                     | expr '+' expr                                                             # add
-                    | expr '+=' expr                                                            # addeq
-                    | expr '++'                                                                 # inc
+                    | ID '+=' expr                                                            # addeq
+                    | ID '++'                                                                 # inc
                     | expr '-' expr                                                             # sub
-                    | expr '-=' expr                                                            # subeq
-                    | expr '--'                                                                 # dec
+                    | ID '-=' expr                                                            # subeq
+                    | ID '--'                                                                 # dec
+                    | expr com expr                                                             # compare
                     | callfunc                                                                  # call
                     | ID'.'ID                                                                   # classvar
                     | ID '[' expr ']'                                                           # arrayelem

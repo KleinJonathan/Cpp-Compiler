@@ -88,16 +88,14 @@ public class MyListener extends CppBaseListener {
     //
     public void enterOpenscope(CppParser.OpenscopeContext ctx) {
         scope = new Scope(scope);
-        /*
         AST a = new AST("scope", AST.Types.SCOPE, acc, scope, null, false);
         acc.addChild(a);
         acc = a;
-         */
     }
     public void exitClosescope(CppParser.ClosescopeContext ctx) {
         scope.print();
         scope = scope.prev;
-        //acc = acc.prev;
+        acc = acc.prev;
     }
 
 
@@ -107,7 +105,6 @@ public class MyListener extends CppBaseListener {
     // Declaration Variable
     public void enterDeclvar(CppParser.DeclvarContext ctx) {
         // Bestimmen des Typs
-        AST.Types asttype = AST.Types.DECLARATION;
         String type = ctx.getParent().getChild(0).getText();
         Boolean isConst = false;
         Symbol var;
@@ -123,7 +120,7 @@ public class MyListener extends CppBaseListener {
             var = new SymbolVariable(ctx.ID().getText(), new SymbolType(type), isConst);
         }
         // Erstellen des Symbols und Knostens und hinzufügen zum Scope und AST
-        AST a = new AST(ctx.ID().getText(), asttype, acc, scope, scope.bind(var), isConst);
+        AST a = new AST(ctx.ID().getText(), AST.Types.DECLARATION, acc, scope, scope.bind(var), isConst);
         a.rtype = type;
         acc.addChild(a);
     }
@@ -154,7 +151,10 @@ public class MyListener extends CppBaseListener {
         AST a = null;
         AST.Types asttype = AST.Types.REF;
         String type = ctx.basetype().getText();
-        Boolean isConst = Boolean.valueOf(ctx.const_().getText());
+        Boolean isConst = false;
+        if (ctx.const_() != null) {
+            isConst = Boolean.valueOf(ctx.const_().getText());
+        }
         // Prüfen, ob Variable bereits und Typ existiert
         if (scope.resolve(type) == null || scope.resolveLocal(ctx.ID().getText()) != null) {
             throw new RuntimeException("Type: '" + type + "' not declared or Variable: '" + ctx.ID().getText() + "' already declared");
@@ -198,7 +198,7 @@ public class MyListener extends CppBaseListener {
             }
             // Prüfen, ob Variable schon existiert und ob Typ existiert
             if (scope.resolve(type) == null || scope.resolveLocal(ctx.ID().getText()) != null) {
-                throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+                throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' already declared");
             }
             // Prüfen, ob es sich um eine Referenz handelt
             // Ist eine Referenz
@@ -370,6 +370,7 @@ public class MyListener extends CppBaseListener {
                 throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' false type");
             }
         }
+        acc.rtype = acc.kinder.get(1).rtype;
         acc = acc.prev;
     }
     // Array Size
@@ -446,12 +447,30 @@ public class MyListener extends CppBaseListener {
         // Abgangen von Standardtypen und Builtins, welche nicht instanziiert wurden
         if (isConst){
             if (className.equals("int") || className.equals("bool") || className.equals("char") || className.equals("void")) {
-                throw new RuntimeException("Variablen müssen initialisiert werden");
+                throw new RuntimeException("Const Variablen müssen initialisiert werden");
             }
         }
 
         // Prüfen, ob Variable oder Klasse existiert
         if (scope.resolveLocal(ctx.ID().getText()) == null && scope.resolve(className) != null) {
+
+            // Prüfen, ob es sich um eine Klasse handelt
+            // In bestimmten Fällen kann es sich auch um eine Variable handeln mit basistyp handeln
+            if (!(scope.resolve(className) instanceof Clazz)) {
+                Symbol var;
+                if (ctx.getParent().getChild(0).getText().equals("const")){
+                    isConst = true;
+                    var = new SymbolRefVariable(ctx.ID().getText(), new SymbolType(ctx.getParent().getChild(1).getText()), isConst);
+                } else {
+                    var = new SymbolVariable(ctx.ID().getText(), new SymbolType(className), isConst);
+                }
+                AST a = new AST(ctx.ID().getText(), AST.Types.DECLARATION, acc, scope, scope.bind(var), isConst);
+                a.rtype = className;
+                acc.addChild(a);
+                acc = a;
+                return;
+            }
+
             // Erstellen des Symbols und Knotens und hinzufügen zum Scope und AST
             SymbolVariable clazz = new SymbolVariable(ctx.ID().getText(), new SymbolType(className), isConst);
             AST a = new AST(ctx.ID().getText(), AST.Types.ASSIGNCLASS, acc, scope, scope.bind(clazz), isConst);
@@ -591,33 +610,16 @@ public class MyListener extends CppBaseListener {
 
         // Erstellen der Parameterliste zum späteren Vergleich mit den Funktionsaufrufen
         // Es werden die schlussendlichen Typen der Expressions in der Liste gespeichert. Der Name der Variablen ist nicht relevant
-        List<String> paramTypeList = new ArrayList<>();
-        if (ctx.defparamlist() != null && ctx.defparamlist().defparam() != null) {
-            for (CppParser.DefparamContext defpCtx : ctx.defparamlist().defparam()) {
-                if (defpCtx.children == null) {
-                    break;
-                }
-                if (defpCtx.getChild(0).getClass() == CppParser.DeclContext.class) {
-                    CppParser.DeclContext declCtx = (CppParser.DeclContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.getChild(0).getText());
-                } else if (defpCtx.getChild(0).getClass() == CppParser.AssignnewContext.class) {
-                    CppParser.AssignnewContext declCtx = (CppParser.AssignnewContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText());
-                } else if (defpCtx.getChild(0).getClass() == CppParser.DeclnewContext.class) {
-                    CppParser.DeclnewContext declCtx = (CppParser.DeclnewContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText());
-                } else if (defpCtx.getChild(0).getClass() == CppParser.DefrefvarContext.class) {
-                    CppParser.DefrefvarContext declCtx = (CppParser.DefrefvarContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText() + "&");
-                } else if (defpCtx.getChild(0).getClass() == CppParser.DeclrefvarContext.class) {
-                    CppParser.DeclrefvarContext declCtx = (CppParser.DeclrefvarContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText() + "&");
-                }
+        List<String> paramTypeList = extractParamTypes(ctx.defparamlist());
+
+        // Prüfen, ob die Funktion bereits definiert wurde - Declarationen mit gleichen Paramtern werden ignoriert und einfach überschrieben
+        SymbolFunction funcsymbol = (SymbolFunction) scope.resolve(ctx.ID().getText() + paramTypeList.toString());
+        if (funcsymbol != null) {
+            if (!funcsymbol.decl) {
+                return;
             }
         }
-        // Funktionen können mit selben Signaturen mehrfach deklariert werden
-        // => Deswegen wird nicht geprüft, ob die Funktion bereits existiert
-        // => Werden einfach im Scope überschrieben, da dies eine Hashmap ist und somit nur ein Eintrag pro Key existieren kann
+
         SymbolFunction func = new SymbolFunction(
                 ctx.ID().getText(),
                 rtype,
@@ -629,7 +631,6 @@ public class MyListener extends CppBaseListener {
                 abstractFunc
         );
         AST a = new AST(ctx.ID().getText(), AST.Types.FUNCTION_DEC, acc, scope, scope.bind(func), false);
-        func.functionAST = a;
         a.rtype = rtype;
         acc.addChild(a);
         acc = a;
@@ -639,9 +640,12 @@ public class MyListener extends CppBaseListener {
         acc.addChild(b);
     }
     public void exitDeclfunc(CppParser.DeclfuncContext ctx) {
-        // Zurücksetzen des AST und Scopes
-        acc = acc.prev;
-        scope = scope.prev;
+        // Prüfen, ob Funktion deklariert wurde, wenn ja, dann zurücksetzen des AST und Scopes
+        if (acc.asttype == AST.Types.FUNCTION_DEC) {
+            // Zurücksetzen des AST und Scopes
+            acc = acc.prev;
+            scope = scope.prev;
+        }
     }
     // Definition Funktion
     public void enterFuncdef(CppParser.FuncdefContext ctx) {
@@ -657,31 +661,18 @@ public class MyListener extends CppBaseListener {
         }
         // Parameterliste extrahieren und speichern der Typen zum späteren Vergleich der Funktionsaufrufe
         // Somit können Funktionen mit gleichen Namen und unterschiedlichen Parametern deklariert werden (Überladung)
-        List<String> paramTypeList = new ArrayList<>();
-        if (ctx.defparamlist() != null && ctx.defparamlist().defparam() != null) {
-            for (CppParser.DefparamContext defpCtx : ctx.defparamlist().defparam()) {
-                // Abbrechen der Schleife, wenn keine Parameter mehr vorhanden sind
-                if (defpCtx.children == null) {
-                    break;
-                }
-                if (defpCtx.getChild(0).getClass() == CppParser.DeclContext.class) {
-                    CppParser.DeclContext declCtx = (CppParser.DeclContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.getChild(0).getText());
-                } else if (defpCtx.getChild(0).getClass() == CppParser.AssignnewContext.class) {
-                    CppParser.AssignnewContext declCtx = (CppParser.AssignnewContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText());
-                } else if (defpCtx.getChild(0).getClass() == CppParser.DeclnewContext.class) {
-                    CppParser.DeclnewContext declCtx = (CppParser.DeclnewContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText());
-                } else if (defpCtx.getChild(0).getClass() == CppParser.DefrefvarContext.class) {
-                    CppParser.DefrefvarContext declCtx = (CppParser.DefrefvarContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText() + "&");
-                } else  if (defpCtx.getChild(0).getClass() == CppParser.DeclrefvarContext.class) {
-                    CppParser.DeclrefvarContext declCtx = (CppParser.DeclrefvarContext) defpCtx.getChild(0);
-                    paramTypeList.add(declCtx.basetype().getText() + "&");
-                }
+        List<String> paramTypeList = extractParamTypes(ctx.defparamlist());
+
+        SymbolFunction func = (SymbolFunction) scope.resolve(ctx.ID().getText() + paramTypeList.toString());
+
+        // Prüfen, ob die Funktion bereits definiert wurde
+        if (func != null) {
+            // Declarierte Funktionen mit gleichen Parametern werden einfach überschrieben
+            if (!func.decl) {
+                throw new RuntimeException("Function: '" + ctx.ID().getText() + "' already declared");
             }
         }
+
         // Erstellen des Symbols und Knotens und hinzufügen zum Scope und AST
         SymbolFunction newfunc = new SymbolFunction(
                 ctx.ID().getText(),
@@ -693,13 +684,15 @@ public class MyListener extends CppBaseListener {
                 override,
                 false
         );
-        AST a = new AST(ctx.ID().getText(), AST.Types.FUNCTION_DEF, acc, scope, scope.bind(newfunc), false);
-        a.rtype = rtype;
+        scope.bind(newfunc);
+        AST a = new AST(ctx.ID().getText(), AST.Types.FUNCTION_DEF, acc, scope, newfunc, false);
         newfunc.functionAST = a;
+        a.rtype = rtype;
         acc.addChild(a);
         acc = a;
         scope = newfunc.scope;
-        AST b = new AST(ctx.getChild(0).getText(), AST.Types.RETURNTYPE, acc);
+        AST b = new AST(ctx.getChild(0).getText(), AST.Types.RETURNTYPE, acc, scope, null, false);
+        b.rtype = rtype;
         acc.addChild(b);
     }
     public void exitFuncdef(CppParser.FuncdefContext ctx) {
@@ -750,7 +743,7 @@ public class MyListener extends CppBaseListener {
         // Vergleich der Funktionen mithilfe der Parameterliste
         SymbolFunction func;
         // Die Funktion ist eine Klassenfunktion
-        if (ctx.ID().getLast() != null) {
+        if (ctx.ID().getLast() != null && ctx.ID().size() > 1) {
             Symbol object = scope.resolve(ctx.ID(0).getText());
             String function = ctx.ID().getLast().getText();
             // Prüfen, ob es sich um eine Klasse handelt
@@ -779,6 +772,9 @@ public class MyListener extends CppBaseListener {
         if (func.functionAST != null){
             acc.rtype = func.functionAST.rtype;
         }
+        // Verknüpfen des Symbols mit dem AST
+        acc.symbol = func;
+
         acc = acc.prev;
     }
     // Param Lists
@@ -970,9 +966,11 @@ public class MyListener extends CppBaseListener {
         String type1 = acc.kinder.get(0).rtype;
         String type2 = acc.kinder.get(1).rtype;
         String rtype;
-        if (type1.equals("int") && type2.equals("bool") || type1.equals("bool") && type2.equals("int")) {
+        if ((type1.equals("int") || type1.equals("bool") || type1.equals("char")) &&
+            (type2.equals("int") || type2.equals("bool") || type2.equals("char")))
+        {
             rtype = "int";
-        } else if (!type1.equals(type2)){
+        } else if (!type1.equals(type2) || (!type1.equals("int") && !type1.equals("char") && !type1.equals("bool"))){
             throw new RuntimeException("Addition: '" + acc.kinder.get(0).rtype + "' and '" + acc.kinder.get(1).rtype + "' not possible");
         } else {
             rtype = type1;
@@ -985,8 +983,16 @@ public class MyListener extends CppBaseListener {
         AST a = new AST("+=", AST.Types.ADDEQ, acc);
         acc.addChild(a);
         acc = a;
+        Symbol id = scope.resolve(ctx.ID().getText());
+        if (id == null){
+            throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+        }
+        AST b = new AST(ctx.ID().getText(), AST.Types.ID, acc, scope, id, id.isConst);
+        acc.addChild(b);
+        b.rtype = id.type.getName();
     }
     public void exitAddeq(CppParser.AddeqContext ctx) {
+        acc.rtype = acc.kinder.get(0).rtype;
         acc = acc.prev;
     }
     //Sub
@@ -999,10 +1005,12 @@ public class MyListener extends CppBaseListener {
         String type1 = acc.kinder.get(0).rtype;
         String type2 = acc.kinder.get(1).rtype;
         String rtype;
-        if (type1.equals("int") && type2.equals("bool") || type1.equals("bool") && type2.equals("int")) {
+        if ((type1.equals("int") || type1.equals("bool") || type1.equals("char")) &&
+                (type2.equals("int") || type2.equals("bool") || type2.equals("char")))
+        {
             rtype = "int";
-        } else if (!type1.equals(type2)){
-            throw new RuntimeException("Subtraction: '" + acc.kinder.get(0).rtype + "' and '" + acc.kinder.get(1).rtype + "' not possible");
+        } else if (!type1.equals(type2) || (!type1.equals("int") && !type1.equals("char") && !type1.equals("bool"))){
+            throw new RuntimeException("Substraction: '" + acc.kinder.get(0).rtype + "' and '" + acc.kinder.get(1).rtype + "' not possible");
         } else {
             rtype = type1;
         }
@@ -1014,8 +1022,16 @@ public class MyListener extends CppBaseListener {
         AST a = new AST("-=", AST.Types.SUBEQ, acc);
         acc.addChild(a);
         acc = a;
+        Symbol id = scope.resolve(ctx.ID().getText());
+        if (id == null){
+            throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+        }
+        AST b = new AST(ctx.ID().getText(), AST.Types.ID, acc, scope, id, id.isConst);
+        acc.addChild(b);
+        b.rtype = id.type.getName();
     }
     public void exitSubeq(CppParser.SubeqContext ctx) {
+        acc.rtype = acc.kinder.get(0).rtype;
         acc = acc.prev;
     }
     //Mul
@@ -1028,9 +1044,11 @@ public class MyListener extends CppBaseListener {
         String type1 = acc.kinder.get(0).rtype;
         String type2 = acc.kinder.get(1).rtype;
         String rtype;
-        if (type1.equals("int") && type2.equals("bool") || type1.equals("bool") && type2.equals("int")) {
+        if ((type1.equals("int") || type1.equals("bool") || type1.equals("char")) &&
+                (type2.equals("int") || type2.equals("bool") || type2.equals("char")))
+        {
             rtype = "int";
-        } else if (!type1.equals(type2)){
+        } else if (!type1.equals(type2) || (!type1.equals("int") && !type1.equals("char") && !type1.equals("bool"))){
             throw new RuntimeException("Multiplikation: '" + acc.kinder.get(0).rtype + "' and '" + acc.kinder.get(1).rtype + "' not possible");
         } else {
             rtype = type1;
@@ -1043,8 +1061,16 @@ public class MyListener extends CppBaseListener {
         AST a = new AST("*=", AST.Types.MULEQ, acc);
         acc.addChild(a);
         acc = a;
+        Symbol id = scope.resolve(ctx.ID().getText());
+        if (id == null){
+            throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+        }
+        AST b = new AST(ctx.ID().getText(), AST.Types.ID, acc, scope, id, id.isConst);
+        acc.addChild(b);
+        b.rtype = id.type.getName();
     }
     public void exitMuleq(CppParser.MuleqContext ctx) {
+        acc.rtype = acc.kinder.get(0).rtype;
         acc = acc.prev;
     }
     //Div
@@ -1057,10 +1083,12 @@ public class MyListener extends CppBaseListener {
         String type1 = acc.kinder.get(0).rtype;
         String type2 = acc.kinder.get(1).rtype;
         String rtype;
-        if (type1.equals("int") && type2.equals("bool") || type1.equals("bool") && type2.equals("int")) {
+        if ((type1.equals("int") || type1.equals("bool") || type1.equals("char")) &&
+                (type2.equals("int") || type2.equals("bool") || type2.equals("char")))
+        {
             rtype = "int";
-        } else if (!type1.equals(type2)){
-            throw new RuntimeException("Division: '" + acc.kinder.get(0).rtype + "' and '" + acc.kinder.get(1).rtype + "' not possible");
+        } else if (!type1.equals(type2) || (!type1.equals("int") && !type1.equals("char") && !type1.equals("bool"))){
+            throw new RuntimeException("Divison: '" + acc.kinder.get(0).rtype + "' and '" + acc.kinder.get(1).rtype + "' not possible");
         } else {
             rtype = type1;
         }
@@ -1072,8 +1100,16 @@ public class MyListener extends CppBaseListener {
         AST a = new AST("/=", AST.Types.DIVEQ, acc);
         acc.addChild(a);
         acc = a;
+        Symbol id = scope.resolve(ctx.ID().getText());
+        if (id == null){
+            throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+        }
+        AST b = new AST(ctx.ID().getText(), AST.Types.ID, acc, scope, id, id.isConst);
+        acc.addChild(b);
+        b.rtype = id.type.getName();
     }
     public void exitDiveq(CppParser.DiveqContext ctx) {
+        acc.rtype = acc.kinder.get(0).rtype;
         acc = acc.prev;
     }
     // Increment
@@ -1081,6 +1117,13 @@ public class MyListener extends CppBaseListener {
         AST a = new AST("++", AST.Types.INC, acc);
         acc.addChild(a);
         acc = a;
+        Symbol id = scope.resolve(ctx.ID().getText());
+        if (id == null){
+            throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+        }
+        AST b = new AST(ctx.ID().getText(), AST.Types.ID, acc, scope, id, id.isConst);
+        acc.addChild(b);
+        b.rtype = id.type.getName();
     }
     public void exitInc(CppParser.IncContext ctx) {
         acc = acc.prev;
@@ -1090,6 +1133,13 @@ public class MyListener extends CppBaseListener {
         AST a = new AST("--", AST.Types.DEC, acc);
         acc.addChild(a);
         acc = a;
+        Symbol id = scope.resolve(ctx.ID().getText());
+        if (id == null){
+            throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' not declared");
+        }
+        AST b = new AST(ctx.ID().getText(), AST.Types.ID, acc, scope, id, id.isConst);
+        acc.addChild(b);
+        b.rtype = id.type.getName();
     }
     public void exitDec(CppParser.DecContext ctx) {
         acc = acc.prev;
@@ -1148,6 +1198,42 @@ public class MyListener extends CppBaseListener {
         AST a = new AST(ctx.getText(), AST.Types.CHAR, acc);
         a.rtype = "char";
         acc.addChild(a);
+    }
+
+
+
+
+
+
+
+    public List<String> extractParamTypes(CppParser.DefparamlistContext defparamlistCtx) {
+        List<String> paramTypeList = new ArrayList<>();
+        if (defparamlistCtx != null && defparamlistCtx.defparam() != null) {
+            for (CppParser.DefparamContext defpCtx : defparamlistCtx.defparam()) {
+                if (defpCtx.children == null) {
+                    continue;
+                }
+                if (defpCtx.getChild(0) instanceof CppParser.DeclContext) {
+                    CppParser.DeclContext declCtx = (CppParser.DeclContext) defpCtx.getChild(0);
+                    paramTypeList.add(declCtx.getChild(0).getText());
+                } else if (defpCtx.getChild(0) instanceof CppParser.AssignnewContext) {
+                    CppParser.AssignnewContext assignnewCtx = (CppParser.AssignnewContext) defpCtx.getChild(0);
+                    paramTypeList.add(assignnewCtx.basetype().getText());
+                } else if (defpCtx.getChild(0) instanceof CppParser.DeclnewContext) {
+                    CppParser.DeclnewContext declnewCtx = (CppParser.DeclnewContext) defpCtx.getChild(0);
+                    paramTypeList.add(declnewCtx.basetype().getText());
+                } else if (defpCtx.getChild(0) instanceof CppParser.DefrefvarContext) {
+                    CppParser.DefrefvarContext defrefvarCtx = (CppParser.DefrefvarContext) defpCtx.getChild(0);
+                    paramTypeList.add(defrefvarCtx.basetype().getText() + "&");
+                } else if (defpCtx.getChild(0) instanceof CppParser.DeclrefvarContext) {
+                    CppParser.DeclrefvarContext declrefvarCtx = (CppParser.DeclrefvarContext) defpCtx.getChild(0);
+                    paramTypeList.add(declrefvarCtx.basetype().getText() + "&");
+                } else {
+                    throw new RuntimeException("Unbekannter Parametertyp: " + defpCtx.getText());
+                }
+            }
+        }
+        return paramTypeList;
     }
 }
 

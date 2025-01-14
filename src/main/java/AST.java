@@ -5,7 +5,6 @@ import java.util.Map;
 public class AST {
     enum Types {
         START,
-        BLOCK,
         SCOPE,
 
         UNDEFINED,
@@ -31,13 +30,9 @@ public class AST {
         COMPARE,
 
         // Assign
-        INTASSIGN,
         ARRAYASSIGN,
-        CHARASSIGN,
-        BOOLASSIGN,
         ASSIGNOLD,
         ASSIGNNEW,
-
 
         // Declaration
         DECLARATION,

@@ -3,7 +3,7 @@ created: 2024-12-11 21-21-04
 referenzen: 
 quellen:
 ---
-C++ Version: 11
+ C++ Version: 11
 
 # Fragen 
 - mehrdimensionale Arrays?
@@ -86,6 +86,12 @@ Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wi
 - Der Ausführbare Programmcode kann aktuell noch außerhalb von Funktionen stehen und ausgeführt werden 
 - "decl" in if und whileconn 
 - Referenz auf Klassenvariable 
+- Operationen können auch außerhalb von Funktionen stehen - (Main Funktion)
+- Mathematische Operationen - Mit klassen oder anderen Objekten kann gerechnet werden. 
+  Ist das so richtig oder kann nur mit primitiven Datentypen gerechnet werden 
+- Addeq, subeq ..., inc, dec Typen werden nicht geprüft 
+- If else - Vergleiche zwischen int char ...
+- Main Funktion darf keine Parameter haben
 
 ### Verbesserungen 
 - Kann in der Klasse AST der rtype auch über den Konstruktor gesetzt werden 
@@ -138,18 +144,20 @@ Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wi
 - [ ] Polymorphie (dynamisch, statisch)
 - [ ] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
 
+
+Interpreter - Beim zuweisen von Variablen, genauso wie in der Symboltabelle, von unten nach oben suchen
 # Interpreter 
-- [ ] Basisdatentypen: `bool`, `int`, `char`
-- [ ] Variablen
-- [ ] Arrays
+- [x] Basisdatentypen: `bool`, `int`, `char`
+- [x] Variablen
+- [x] Arrays
 - [ ] C++-Referenzen
-- [ ] Zuweisungen und Expressions
-- [ ] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
+- [x] Zuweisungen und Expressions
+- [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
 - [ ] Funktionen (Definition, Deklaration, Aufrufe)
 - [ ] Klassen (mit Attributen und Methoden)
 - [ ] Einfach-Vererbung
 - [ ] Polymorphie (dynamisch, statisch)
-- [ ] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
+- [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
 
 
 

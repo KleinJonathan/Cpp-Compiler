@@ -1,4 +1,6 @@
 #include <cstdio>
+#include <iostream>
+
 //#include <iostream>
 //using namespace std;
 
@@ -67,8 +69,24 @@ int func1 (int x){
     return 1;
 };
 
+int func12(int i) {
+    return i;
+};
+int func12(int i);
+
+
+int func(int i) {
+    return i;
+};
+int func(int &i) {
+    return i;
+};
+
 
 int main(){
+    int kkk = 10;
+    func123(kkk);
+
     int aaa = 10;
     aaa = func1(add_5(10+10));
     printf("%d\n", aaa);
@@ -86,10 +104,8 @@ int main(){
     r=j;         // aendert i: i==9
     int &l=r;
 
-    int j=9;
     int &kk = j;
     int jj = 9;
-    int &ii = &jj;
 
     const Dummy a;
     Dummy b(37);
@@ -124,10 +140,14 @@ int main(){
     add_5(ip);
     erg = add_5(o);
 
+
+    int aaaaa;
+    std::cout << aaaaa << std::endl;
+
+
 }
 
 int Student::wuppie(int c){
     return c;
 };
-
 

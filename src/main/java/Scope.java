@@ -45,7 +45,7 @@ public class Scope {
         String indent = getIndent(level);
         System.out.println(indent + "Scope-Level " + level + ": {");
         for (Map.Entry<String, Symbol> entry : scope.entrySet()) {
-            System.out.println(indent + "  " + entry.getKey() + " : " + entry.getValue().type.getName() + " - " + entry.getValue().getClass().getSimpleName() + " - " + entry.getValue());
+            System.out.println(indent + "  " + entry.getKey() + " : " + entry.getValue().type.getName() + " - " + entry.getValue().getClass().getSimpleName());
         }
         System.out.println(indent + "}");
 
