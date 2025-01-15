@@ -471,10 +471,12 @@ public class MyListener extends CppBaseListener {
                 // Ermitteln ob die Variable eine Referenz ist
                 AST.Types asttype = AST.Types.DECLARATION;
                 CppParser.AssignnewContext par = (CppParser.AssignnewContext) ctx.getParent();
+                System.out.println(par.getClass().getSimpleName());
                 if (par != null) {
+                    System.out.println(par.REF());
                     if (par.REF() != null && par.getClass().getSimpleName().equals("AssignnewContext")) {
                         asttype = AST.Types.REF;
-                    } else {
+                    } else if (par.REF() != null && !par.getClass().getSimpleName().equals("AssignnewContext")){
                         throw new RuntimeException("Ref Variablen müssen initialisiert werden");
                     }
                 }
@@ -647,6 +649,7 @@ public class MyListener extends CppBaseListener {
                 abstractFunc
         );
         AST a = new AST(ctx.ID().getText(), AST.Types.FUNCTION_DEC, acc, scope, scope.bind(func), false);
+        func.functionAST = a;
         a.rtype = rtype;
         acc.addChild(a);
         acc = a;

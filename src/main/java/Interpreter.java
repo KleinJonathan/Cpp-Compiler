@@ -28,21 +28,28 @@ public class Interpreter {
                     eval(c);
                 }
 
+                // TODO - Nach ablaufen des gesammten AST die Main Funktion suchen und ausführen
+                //  Mainfunktion kann nur gefunden werde, wenn diese keine Parameter hat
                 SymbolFunction main = (SymbolFunction) environment.get("main[]");
                 if (main == null) {
                     throw new RuntimeException("No main function found");
                 } else {
-                    for (AST c : main.functionAST.kinder) {
-                        eval(c);
+                    try {
+                        for (AST c : main.functionAST.kinder) {
+                            eval(c);
+                        }
+                    } catch (ReturnException e){
+                        System.out.println("Main return: " + e.getValue());
                     }
                 }
 
                 break;
-                // TODO - Nach ablaufen des gesammten AST die Main Funktion suchen und ausführen
             case RETURN:
                 // TODO - Bei rückgabe von Referenzen muss ich die Variable und nicht den Wert zurückgeben - Was passiert bei Lokalen Variablen?
+                //System.out.println("Return: " + t.kinder.get(0).asttype);
                 Object returnvalue = eval(t.kinder.get(0));
-                environment.print();
+                //System.out.println("Returnvalue: " + returnvalue);
+                //environment.print();
                 if (returnvalue instanceof String){
                     returnvalue = environment.get((String) returnvalue);
                 }
@@ -66,12 +73,13 @@ public class Interpreter {
                 break;
             case DECLARATION:
                 String declarationid = t.value;
+                // Die Basistypen bekommen wie in c++ zufällige werte, welche dann in den jeweiligen Typ interpretiert werden
                 if (t.rtype.equals("int")){
-                    environment.define(declarationid, 0);
+                    environment.define(declarationid, (int) (Math.random()*1000000));
                 } else if (t.rtype.equals("char")){
-                    environment.define(declarationid, 'a');
+                    environment.define(declarationid, (char) (Math.random()*26 + 'a'));
                 } else if (t.rtype.equals("bool")){
-                    environment.define(declarationid, false);
+                    environment.define(declarationid, (boolean) (Math.random() > 0.5));
                 } else {
                     // TODO - Fehlerbehandlung und Klassenerstellung
                     System.out.println("Else in declaration: " + declarationid + " - " + t.rtype);
@@ -208,13 +216,11 @@ public class Interpreter {
                 // Umgebung speichern
                 Environment preenvironment = environment;
                 try{
-                    // Umgebung auf die Funktion umstellen
-                    environment = funcFuncCall.env;
                     // Temporäre Umgebung für die Funktionsparameter erstellen
-                    environment = new Environment(environment);
-                    // Funktionsparameter in die Umgebung speichern
+                    // Environment wird erst später gesetzt, um rekursion und verschachtelte Funktionsaufrufe zu ermöglichen
+                    Environment funcEnvironment = new Environment(funcFuncCall.env);
+                    // Anzahl der Funktionsparameter
                     int funcCallParams = funcFuncCall.functionAST.kinder.get(1).kinder.size();
-                    Object funcCallArgs[] = new Object[funcCallParams];
                     if (funcCallParams > 0){
                         for (int i = 0; i < funcCallParams ; i++){
                             Object funcCallArg = eval(t.kinder.get(0).kinder.get(i));
@@ -225,22 +231,22 @@ public class Interpreter {
                                 if (funcFuncCall.functionAST.kinder.get(1).kinder.get(i).asttype == AST.Types.REF){
                                     // Greifen des Referenzobjekts und speichern also tatsächloche Referenz in der neuen Variable
                                     Variable refVarFuncCall = preenvironment.getVariable((String) funcCallArg);
-                                    environment.defineReference(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, refVarFuncCall);
+                                    funcEnvironment.defineReference(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, refVarFuncCall);
                                     funcCallArg = environment.getVariable((String) funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value);
                                 } else {
                                     // Auswerten von Variablen
-                                    funcCallArg = preenvironment.getVariable((String) funcCallArg);
+                                    funcCallArg = preenvironment.get((String) funcCallArg);
+                                    funcEnvironment.define(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, funcCallArg);
                                 }
-                                funcCallArgs[i] = funcCallArg;
                             } else {
-                                funcCallArgs[i] = funcCallArg;
-                                environment.define(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, funcCallArg);
+                                funcEnvironment.define(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, funcCallArg);
                             }
-                            // Funktionsparameter in die Umgebung speichern
                         }
                     }
-                    // Temporäre Umgebung für den Funktionskörper erstellen
-                    environment = new Environment(environment);
+
+                    // Umgebung auf die Funktionsumgebung setzen
+                    environment = funcEnvironment;
+
                     // Durchlaufen und ausführen der Funktion
                     for (AST c : funcFuncCall.functionAST.kinder) {
                         eval(c);
@@ -268,6 +274,13 @@ public class Interpreter {
                 break;
 
             case AST.Types.WHILE_BLOCK:
+                for (AST c : t.kinder) {
+                    Object while_block_condition = eval(t.kinder.get(0));
+                    while (mathhelper(while_block_condition) != 0){
+                        eval(t.kinder.get(1));
+                        while_block_condition = eval(t.kinder.get(0));
+                    }
+                }
                 break;
             case AST.Types.IF_BLOCK:
                 return eval(t.kinder.get(0));
@@ -281,39 +294,39 @@ public class Interpreter {
 
 
 
-            // LOGISCHE OPERATIONEN TODO - Typen prüfen und Fehlerbehandlung
+            // LOGISCHE OPERATIONEN TODO - Typen prüfen und Fehlerbehandlung - Was passiert beim Verlgiech von Objekten
             case AST.Types.EQUAL:
-                if ((Object) eval(t.kinder.get(0)) == (Object) eval(t.kinder.get(1))){
+                if (mathhelper(eval(t.kinder.get(0))) == mathhelper(eval(t.kinder.get(1)))){
                     return true;
                 } else {
                     return false;
                 }
             case AST.Types.NOT_EQUAL:
-                if ((Object) eval(t.kinder.get(0)) != (Object) eval(t.kinder.get(1))){
+                if (mathhelper(eval(t.kinder.get(0))) != mathhelper(eval(t.kinder.get(1)))){
                     return true;
                 } else {
                     return false;
                 }
             case AST.Types.GREATER:
-                if ((Integer) eval(t.kinder.get(0)) > (Integer) eval(t.kinder.get(1))){
+                if (mathhelper(eval(t.kinder.get(0))) > mathhelper(eval(t.kinder.get(1)))){
                     return true;
                 } else {
                     return false;
                 }
             case AST.Types.LOWER:
-                if ((Integer) eval(t.kinder.get(0)) < (Integer) eval(t.kinder.get(1))){
+                if (mathhelper(eval(t.kinder.get(0))) < mathhelper(eval(t.kinder.get(1)))){
                     return true;
                 } else {
                     return false;
                 }
             case AST.Types.GREATER_EQUAL:
-                if ((Integer) eval(t.kinder.get(0)) >= (Integer) eval(t.kinder.get(1))){
+                if (mathhelper(eval(t.kinder.get(0))) >= mathhelper(eval(t.kinder.get(1)))){
                     return true;
                 } else {
                     return false;
                 }
             case AST.Types.LOWER_EQUAL:
-                if ((Integer) eval(t.kinder.get(0)) <= (Integer) eval(t.kinder.get(1))){
+                if (mathhelper(eval(t.kinder.get(0))) <= mathhelper(eval(t.kinder.get(1)))){
                     return true;
                 } else {
                     return false;
@@ -405,13 +418,17 @@ public class Interpreter {
                 }
                 break;
             case AST.Types.PRINT_CHAR:
-                for (AST c : t.kinder) {
-                    System.out.println(eval(c));
+                if (AST.Types.ID == t.kinder.get(0).asttype) {
+                    System.out.println((char) mathhelper(environment.get(t.kinder.get(0).value)));
+                } else {
+                    System.out.println((char) mathhelper(eval(t.kinder.get(0))));
                 }
                 break;
             case AST.Types.PRINT_BOOL:
-                for (AST c : t.kinder) {
-                    System.out.println(eval(c));
+                if (AST.Types.ID == t.kinder.get(0).asttype) {
+                    System.out.println(mathhelper(environment.get(t.kinder.get(0).value)) > 0 ? "true" : "false");
+                } else {
+                    System.out.println(mathhelper(eval(t.kinder.get(0))) == 0 ? "false" : "true");
                 }
                 break;
 
@@ -443,6 +460,7 @@ public class Interpreter {
             case "String":
                 //System.out.println("String in Mathhelper: " + ob);
                 Object obvar = environment.get((String) ob);
+                //System.out.println("String in Mathhelper obvar: " + obvar);
                 switch (obvar.getClass().getSimpleName()){
                     case "Integer": ob = obvar; break;
                     case "Character": ob = (int) (Character) obvar; break;

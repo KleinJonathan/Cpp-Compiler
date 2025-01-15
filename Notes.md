@@ -134,17 +134,17 @@ Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wi
 - Wo muss der Konstruktoraufruf geprüft werden 
 
 # AST Prüfen  
-- [ ] Basisdatentypen: `bool`, `int`, `char`
-- [ ] Variablen
-- [ ] Arrays
+- [x] Basisdatentypen: `bool`, `int`, `char`
+- [x] Variablen
+- [x] Arrays
 - [ ] C++-Referenzen
 - [ ] Zuweisungen und Expressions
-- [ ] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
-- [ ] Funktionen (Definition, Deklaration, Aufrufe)
+- [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
+- [x] Funktionen (Definition, Deklaration, Aufrufe)
 - [ ] Klassen (mit Attributen und Methoden)
 - [ ] Einfach-Vererbung
 - [ ] Polymorphie (dynamisch, statisch)
-- [ ] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
+- [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
 
 
 Interpreter - Beim zuweisen von Variablen, genauso wie in der Symboltabelle, von unten nach oben suchen
@@ -152,7 +152,7 @@ Interpreter - Beim zuweisen von Variablen, genauso wie in der Symboltabelle, von
 - [x] Basisdatentypen: `bool`, `int`, `char`
 - [x] Variablen
 - [x] Arrays
-- [ ] C++-Referenzen
+- [x] C++-Referenzen
 - [x] Zuweisungen und Expressions
 - [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
 - [ ] Funktionen (Definition, Deklaration, Aufrufe)
@@ -176,6 +176,13 @@ Was passiert, wenn ich in  &x = y; und dann &x = z
 
 
 
+
+
+
+# Vorstellung 
+- Referenzen Umsetzung und Erklärung, vor allem auch im Interpreter 
+- Mathhelper und Konvertierung im Interpreter 
+- 
 
 
 

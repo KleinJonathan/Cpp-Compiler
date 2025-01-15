@@ -61,8 +61,8 @@ assignnewclass      : REF ID                        // Student &s = Student();
 
 declnew             : basetype (declarray | declvar)(',' (declarray | declvar))*
                     ;
-assignnew           : const? basetype REF? (assignvar | assignnewarray | assignnewclass | defrefvar)
-                        (',' (assignvar | assignnewarray | assignnewclass | defrefvar))*
+assignnew           : const? basetype REF? (assignvar | assignnewarray | assignnewclass)
+                        (',' (assignvar | assignnewarray | assignnewclass))*
                     ;
 assignold           : (assignvar | assignarrayelement | assignclassvar | assignnewclass)
                         (',' (assignvar | assignarrayelement | assignclassvar | assignnewclass))*;

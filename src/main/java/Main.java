@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 public class Main {
   public static void main(String... args) throws IOException {
     // Lesen der Datei
-    File file = new File("./src/main/java/cpp/input.cpp");
+    File file = new File("./src/main/java/cpp/func.cpp");
     // Buffer zum lesen der Datei
     BufferedReader br = new BufferedReader(new FileReader(file));
 

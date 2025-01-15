@@ -1,6 +1,5 @@
 public class Variable {
     public Object value;
-    public boolean reference = false;
 
 
     public Variable(Object value) {
