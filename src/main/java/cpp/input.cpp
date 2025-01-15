@@ -18,12 +18,6 @@ void print_bool(bool value) {
 */
 
 
-
-
-
-
-
-
 class Person {
 public:
     int age;
@@ -32,40 +26,34 @@ public:
     }
 };
 
-int func();
-
-
-int main();
-
-
-
-int a;
-
-
-
-char func(){
-    int b = 20;
-    a += b;
-    char x = 'x';
-    return x;
-}
-
-int i = 10;
-
 
 int func(int &i){
+    //print_int(i);
+    i = i + 10;
     return i;
 }
 
 
-
-
 int main() {
-    char x = 'y';
-    //std::cout << (b) << std::endl;
-    print_int(func(100));
+    int k = 20;
+    print_int(k);
+    print_int(func(k));
+    print_int(func(k));
+    print_int(func(k));
+    print_int(func(k));
+    int &b = k;
+    print_int(b);
+
 }
 
 
 
+
+
+
+
+
+
+
+    //std::cout << (b) << std::endl;
 

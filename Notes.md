@@ -92,6 +92,8 @@ Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wi
 - Addeq, subeq ..., inc, dec Typen werden nicht geprüft 
 - If else - Vergleiche zwischen int char ...
 - Main Funktion darf keine Parameter haben
+- Funktion Parameter Default werte 
+- Abstrakte Funktionen - Prüfen, ob diese implementiert wurden 
 
 ### Verbesserungen 
 - Kann in der Klasse AST der rtype auch über den Konstruktor gesetzt werden 

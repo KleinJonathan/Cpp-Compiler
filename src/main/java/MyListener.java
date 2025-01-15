@@ -458,13 +458,29 @@ public class MyListener extends CppBaseListener {
             // In bestimmten Fällen kann es sich auch um eine Variable handeln mit basistyp handeln
             if (!(scope.resolve(className) instanceof Clazz)) {
                 Symbol var;
+                SymbolType type;
                 if (ctx.getParent().getChild(0).getText().equals("const")){
                     isConst = true;
-                    var = new SymbolRefVariable(ctx.ID().getText(), new SymbolType(ctx.getParent().getChild(1).getText()), isConst);
+                    type = new SymbolType(ctx.getParent().getChild(1).getText());
+                    System.out.println(ctx.getParent().getText());
+
                 } else {
-                    var = new SymbolVariable(ctx.ID().getText(), new SymbolType(className), isConst);
+                    type = new SymbolType(className);
                 }
-                AST a = new AST(ctx.ID().getText(), AST.Types.DECLARATION, acc, scope, scope.bind(var), isConst);
+
+                // Ermitteln ob die Variable eine Referenz ist
+                AST.Types asttype = AST.Types.DECLARATION;
+                CppParser.AssignnewContext par = (CppParser.AssignnewContext) ctx.getParent();
+                if (par != null) {
+                    if (par.REF() != null && par.getClass().getSimpleName().equals("AssignnewContext")) {
+                        asttype = AST.Types.REF;
+                    } else {
+                        throw new RuntimeException("Ref Variablen müssen initialisiert werden");
+                    }
+                }
+
+                var = new SymbolVariable(ctx.ID().getText(), type, isConst);
+                AST a = new AST(ctx.ID().getText(), asttype, acc, scope, scope.bind(var), isConst);
                 a.rtype = className;
                 acc.addChild(a);
                 acc = a;
@@ -768,6 +784,17 @@ public class MyListener extends CppBaseListener {
         if (func == null) {
             throw new RuntimeException("Function: '" + ctx.ID().getFirst().getText() + paramTypeList.toString() + "' not declared");
         }
+
+        // Prüft ob wenn eine Referenz gefordert ist, auch eine Variable(ID) und kein direkter Wert übergeben wurde
+        for (int i = 0; i < func.functionAST.kinder.get(1).kinder.size(); i++){
+            System.out.println(func.functionAST.kinder.get(1).kinder.get(i).asttype);
+            if (func.functionAST.kinder.get(1).kinder.get(i).asttype.equals(AST.Types.REF)
+                && !acc.kinder.get(0).kinder.get(i).asttype.equals(AST.Types.ID)
+            ){
+                throw new RuntimeException("Function: '" + ctx.ID().getFirst().getText() + paramTypeList.toString() + "' false type");
+            }
+        }
+
         // Verknüpfen des Symbols mit dem AST
         if (func.functionAST != null){
             acc.rtype = func.functionAST.rtype;
@@ -1224,10 +1251,10 @@ public class MyListener extends CppBaseListener {
                     paramTypeList.add(declnewCtx.basetype().getText());
                 } else if (defpCtx.getChild(0) instanceof CppParser.DefrefvarContext) {
                     CppParser.DefrefvarContext defrefvarCtx = (CppParser.DefrefvarContext) defpCtx.getChild(0);
-                    paramTypeList.add(defrefvarCtx.basetype().getText() + "&");
+                    paramTypeList.add(defrefvarCtx.basetype().getText());
                 } else if (defpCtx.getChild(0) instanceof CppParser.DeclrefvarContext) {
                     CppParser.DeclrefvarContext declrefvarCtx = (CppParser.DeclrefvarContext) defpCtx.getChild(0);
-                    paramTypeList.add(declrefvarCtx.basetype().getText() + "&");
+                    paramTypeList.add(declrefvarCtx.basetype().getText());
                 } else {
                     throw new RuntimeException("Unbekannter Parametertyp: " + defpCtx.getText());
                 }

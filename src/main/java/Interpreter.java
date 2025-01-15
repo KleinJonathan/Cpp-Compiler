@@ -97,7 +97,9 @@ public class Interpreter {
                 environment.define(arraydeclarationid, arraydeclaration);
                 break;
             case REF:
-                return null;
+                Variable refVar = environment.getVariable(t.kinder.get(0).value);
+                environment.defineReference(t.value, refVar);
+                break;
             case ASSIGNARRAYELEMENT:
                 Object assignarrayelementindex = eval(t.kinder.get(0));
                 Object assignarrayelementarray = environment.get(t.value);
@@ -216,18 +218,25 @@ public class Interpreter {
                     if (funcCallParams > 0){
                         for (int i = 0; i < funcCallParams ; i++){
                             Object funcCallArg = eval(t.kinder.get(0).kinder.get(i));
-                            System.out.println("Function call arg: " + funcCallArg + " - Type: " + funcCallArg.getClass().getSimpleName());
                             // Parameter auswerten
                             // TODO - Je nach dem ob es sich um einer Refernz handelt oder nicht darf ich diese auswerten oder nicht
                             if (funcCallArg instanceof String){
-                                // Auswerten von Variablen
-                                funcCallArg = preenvironment.get((String) funcCallArg);
+                                // Prüfen ob es sich um eine Referenz handelt
+                                if (funcFuncCall.functionAST.kinder.get(1).kinder.get(i).asttype == AST.Types.REF){
+                                    // Greifen des Referenzobjekts und speichern also tatsächloche Referenz in der neuen Variable
+                                    Variable refVarFuncCall = preenvironment.getVariable((String) funcCallArg);
+                                    environment.defineReference(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, refVarFuncCall);
+                                    funcCallArg = environment.getVariable((String) funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value);
+                                } else {
+                                    // Auswerten von Variablen
+                                    funcCallArg = preenvironment.getVariable((String) funcCallArg);
+                                }
                                 funcCallArgs[i] = funcCallArg;
                             } else {
                                 funcCallArgs[i] = funcCallArg;
+                                environment.define(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, funcCallArg);
                             }
                             // Funktionsparameter in die Umgebung speichern
-                            environment.define(funcFuncCall.functionAST.kinder.get(1).kinder.get(i).value, funcCallArg);
                         }
                     }
                     // Temporäre Umgebung für den Funktionskörper erstellen
@@ -427,22 +436,24 @@ public class Interpreter {
 
     // Hilfsfunktion zum Umrechnen von Objekten in Integer
     public int mathhelper(Object ob){
+        //System.out.println("Mathhelper: " + ob);
         if (ob == null) return 0;
         switch (ob.getClass().getSimpleName()){
-            case "Integer": ob = (Integer) ob; break;
+            case "Integer": ob = ob; break;
             case "String":
+                //System.out.println("String in Mathhelper: " + ob);
                 Object obvar = environment.get((String) ob);
                 switch (obvar.getClass().getSimpleName()){
-                    case "Integer": ob = (Integer) obvar; break;
+                    case "Integer": ob = obvar; break;
                     case "Character": ob = (int) (Character) obvar; break;
                     case "Boolean": ob = (Boolean) obvar ? 1 : 0; break;
                 }
                 break;
             case "Character": ob = (int) (Character) ob; break;
             case "Boolean": ob = (Boolean) ob ? 1 : 0; break;
-            default: System.out.println("Default case in Mathhelper"); break;
+            case "Variable": ob = ((Variable) ob).value; break;
+            default: System.out.println("Default case in Mathhelper with Type: " + ob.getClass().getSimpleName()); break;
         }
         return (Integer) ob;
     }
-
 }
