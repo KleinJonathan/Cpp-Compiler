@@ -1,76 +1,85 @@
-
+/*
+ * Einfache Testfälle für Einfach-Vererbung in C++
+ *
+ */
 
 /*
-// Funktionen zum Testen mit dem echten C-Compiler
 #include <iostream>
 
-void print_int(int value) {
-    std::cout << value << std::endl;
+void print_char(char c) {
+    std::cout << c << " \n";
 }
-
-void print_char(char value) {
-    std::cout << value << std::endl;
-}
-
-void print_bool(bool value) {
-    std::cout << value << std::endl;
+void print_int(int i) {
+    std::cout << i  << " \n";
 }
 */
 
-/*
-class Person {
-public:
-    int age;
-    int func2() {
-        return 10;
-    }
+
+class A {
+public:     // es reicht, wenn alles public ist (hier nur, damit das Beispiel mit g++ kompiliert)
+    int aval;
+
+    A() { aval = 99; }
+    A(int x) { aval = x; }
+
+    void foo() { print_char('A'); print_char('f'); print_int(aval); }
+
+    virtual void test() = 0;
 };
-*/
 
+class B : public A {
+public:     // es reicht, wenn alles public ist (hier nur, damit das Beispiel mit g++ kompiliert)
+    int bval;
 
+    B(int x) { bval = x; }
 
-int func(int &i){
-    //print_int(i);
-    i = i + 10;
-    return i;
-}
+    // überschriebene Methode aus A
+    void foo() { print_char('B'); print_char('f'); print_int(aval); print_int(bval); }
 
+    // eigene Methode
+    void bar() { print_char('B'); print_char('b'); print_int(aval); print_int(bval); }
 
+    void test() { print_char('A'); print_char('t'); print_int(aval); }
 
-
-// McCarthy 91 function (see https://en.wikipedia.org/wiki/McCarthy_91_function)
-int mc91(int n) {
-    if (n > 100) {
-        return n - 10;
-    } else {
-        return mc91(mc91(n + 11));
+    void test1() {
+        return;
+        return;
+        return;
     }
-}
-int test(int i){
-    int i = 1000;
-    i = i + 10;
-    return i;
-}
+
+};
+
 
 int main() {
-    int k = 20;
-    print_int(mc91(0));     // 91
-    print_int(mc91(1));     // 91
-    print_int(mc91(11));    // 91
-    print_int(mc91(42));    // 91
-    print_int(mc91(100));   // 91
-    print_int(mc91(101));   // 91
-    print_int(mc91(200));   // 190
-    print_int(mc91(300));   // 290
+    // Vererbung: Initialisierung Basisklasse; Überschreiben von Methoden
+
+    //A x(2);
+    B y(7);
+/*
+    x.foo();    // A, f, 2
+    y.foo();    // B, f, 99, 7
+    y.bar();    // B, b, 99, 7
+
+    x.aval = 8;
+    y.bval = 4;
+
+    x.foo();    // A, f, 8
+    y.foo();    // B, f, 99, 4
+    y.bar();    // B, b, 99, 4
+*/
+
+    int &i = y.aval;
+    print_int(i);
+    y.aval = 17;
+    print_int(y.aval);
+    print_int(i);
+
+
+
+
+
+
+
+
+    return 0;
 }
-
-
-
-
-
-
-
-
-
-    //std::cout << (b) << std::endl;
-

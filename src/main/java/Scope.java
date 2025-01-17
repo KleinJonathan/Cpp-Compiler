@@ -1,24 +1,24 @@
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
+// Imports
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+// Scope Klasse zum Verwalten von Symbolen
 public class Scope {
-    // key - value
     // LinkedHashMap um die Reihenfolge zu behalten und um Funktionsparameter vergleichen zu können
     public Map<String, Symbol> scope = new LinkedHashMap<>();
-    Scope prev;
+    public Scope prev;
 
     public Scope(Scope p){
         this.prev = p;
     }
 
-    // Name - Type
+    // Name - Type / Binden von Symbolen an den Scope
     public Symbol bind(Symbol s){
-        return scope.put(s.name, s);
+        scope.put(s.name, s);
+        return s;
     }
 
+    // Name - Type / Auflösen von Symbolen an den Scope
     public Symbol resolve(String key){
         if (key == null) return null;
         //System.out.println("Resolve: " + key);
@@ -32,35 +32,19 @@ public class Scope {
         }
     }
 
+    // Name - Type / Auflösen von Symbolen in dem Lokalen Scope
+    // Parameter zum Beispiel dürfen in jedem Scope neu definiert werden
     public Symbol resolveLocal(String key){
         if (key == null) return null;
         return scope.get(key);
     }
 
-    public void print(){
-        print(0);
-    }
-
-    private void print(int level) {
-        String indent = getIndent(level);
-        System.out.println(indent + "Scope-Level " + level + ": {");
+    // Ausgabe des Scopes
+    public void print() {
+        System.out.println("Scope-Level : {");
         for (Map.Entry<String, Symbol> entry : scope.entrySet()) {
-            System.out.println(indent + "  " + entry.getKey() + " : " + entry.getValue().type.getName() + " - " + entry.getValue().getClass().getSimpleName());
+            System.out.println(entry.getKey() + " : " + entry.getValue().type.getName() + " - " + entry.getValue().getClass().getSimpleName());
         }
-        System.out.println(indent + "}");
-
-        /*
-        if (prev != null) {
-            prev.print(level + 1);
-        }
-         */
-    }
-
-    private String getIndent(int level) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < level; i++) {
-            sb.append("  ");
-        }
-        return sb.toString();
+        System.out.println("}");
     }
 }

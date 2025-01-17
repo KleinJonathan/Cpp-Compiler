@@ -40,20 +40,14 @@ c++ Klassen und funktionsdeclaration muss vor ihrem aufruf stehen
 - Bei Klassen wird auf eine Deklaration geachtet. Sie müssen nicht definiert sein, deklariert reicht erstmal 
 - Konstruktoren liefern ein Objekt zurück
 
-Interpreter
-- Zuweisungen z.b. c = 4 sind expressions und liefern einen Wert zurück 
-- Alle Werte != 0 sind im Boolschen Kontext True. Nur 0 == False 
-- if (c=4) => Zuweisung => liefert 4 zurück => true 
-
 int a = 10;
 {
 	int a = 20 
 	int b = ::a; => Es wird mit :: auf die globale Variable zugegriffen 
 }
 
-Von Classen mit Abstrakten Methoden darf ich kein Objekt erstellen 
 
-Funktionen dürfen nicht in Funktionen definiert werden 
+Von Classen mit Abstrakten Methoden darf ich kein Objekt erstellen 
 
 Was passiert bei Klassenvariablen
 
@@ -63,37 +57,36 @@ Was passiert bei Klassenvariablen
 This muss mit eingebaut werden um dinge auflösen zu können oder um Objekte zu vergleichen 
 Destruktoren "müssen" nicht auf biegen und brechen vorhanden sein
 
-Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wir von der Elternmethode automatisch der Default Konstruktor verwendet (Konstruktor ohne Parameter) - Dieser muss aber auch existieren 
-
 ### Fehler oder Prüfen
 - Zum Starten der Datei muss es eine Mainfunktion geben
 - Klassen
-	- Abstrakte Methoden können einen Funktionkörper haben 
-	- Explizite Klassen? 
-	- Destruktor
-	- Virtual 
-	- Grammatikregel "classfunc" ID::ID
-	- Grammatikregel "callfunc" ID::ID wird aktuell als normale Klassenfuntkion behandelt 
+	- Destruktor - Weglassen? 
+	- 
 	- Prüfen beim erstellen von Klassenobjekten, ob die Klasse abstrakte Methoden hat => Es kann kein Objekt erstellt werden
+	- Defaultwerte im Konstruktor überschreiben den der Inputparameter 
+	- Rekursieve Aufrufe in Klassenfunktionen gehen nicht 
+	- ```Student &s = Student()``` => Geht noch nicht 
+	- Bei vererbung bekommt die Kindklasse auch alle Konstruktoren der Elternklasse vererbt 
 - Funktionen
-	- Es muss im AST gespeichert werden, ob Funktionsparameter referenzen sind oder nicht 
 	- Prüfen der ob ein Return vorhanden ist ?
 	- Rückgabewert von Funktionen ref bsp: int &fkt1(const int &, const char);
-- CONST REF VOID im AST richtig behandelt? 
 - ```int &d = b.age; => Funktioniert nicht => Einfach weglassen? => Referenz auf AST Variable / Dort kann man leichter erkennen, ob es sich um eine Klassenvariabe handelt oder nicht```
 - ```int &fkt1(const int &, const char a);```
-- ```int xx  [2][2] = {{1, 2}, {3, 4}};```
-- Der Ausführbare Programmcode kann aktuell noch außerhalb von Funktionen stehen und ausgeführt werden 
-- "decl" in if und whileconn 
-- Referenz auf Klassenvariable 
-- Operationen können auch außerhalb von Funktionen stehen - (Main Funktion)
-- Mathematische Operationen - Mit klassen oder anderen Objekten kann gerechnet werden. 
-  Ist das so richtig oder kann nur mit primitiven Datentypen gerechnet werden 
-- Addeq, subeq ..., inc, dec Typen werden nicht geprüft 
-- If else - Vergleiche zwischen int char ...
-- Main Funktion darf keine Parameter haben
+- ```Person x[] = {Person(10, 20), Person(20, 30), Person(30, 40)};``` => Wird nicht erkannt 
+- this noch nicht implementiert 
+- Arrays funktionieren noch nicht zufriedenstellend 
+- override von Funktionen 
+
+
+
+# Noch zu implementieren?
 - Funktion Parameter Default werte 
-- Abstrakte Funktionen - Prüfen, ob diese implementiert wurden 
+- Arrays - Objekterstellung funktioniert noch nicht 
+- ```int xx  [2][2] = {{1, 2}, {3, 4}};``` => Mehrdimensionale Arrays 
+- Funktion Parameter Default werte 
+- Bei zuweisungen von Klassenfunktionen wird der Rückgabetyp nicht geprüft ```print_int(x.foo());```=> Rückgabe von foo() = void
+- inc dec array? 
+
 
 ### Verbesserungen 
 - Kann in der Klasse AST der rtype auch über den Konstruktor gesetzt werden 
@@ -137,17 +130,16 @@ Initialisierungslisten müssen nicht implementiert werden - Wenn geerbt wird, wi
 - [x] Basisdatentypen: `bool`, `int`, `char`
 - [x] Variablen
 - [x] Arrays
-- [ ] C++-Referenzen
-- [ ] Zuweisungen und Expressions
+- [x] C++-Referenzen 
+- [x] Zuweisungen und Expressions
 - [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
 - [x] Funktionen (Definition, Deklaration, Aufrufe)
-- [ ] Klassen (mit Attributen und Methoden)
-- [ ] Einfach-Vererbung
+- [x] Klassen (mit Attributen und Methoden)
+- [x] Einfach-Vererbung
 - [ ] Polymorphie (dynamisch, statisch)
 - [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
 
 
-Interpreter - Beim zuweisen von Variablen, genauso wie in der Symboltabelle, von unten nach oben suchen
 # Interpreter 
 - [x] Basisdatentypen: `bool`, `int`, `char`
 - [x] Variablen
@@ -155,9 +147,9 @@ Interpreter - Beim zuweisen von Variablen, genauso wie in der Symboltabelle, von
 - [x] C++-Referenzen
 - [x] Zuweisungen und Expressions
 - [x] Kontrollfluss: `if`-`then`-`else`, `while`-Schleifen
-- [ ] Funktionen (Definition, Deklaration, Aufrufe)
-- [ ] Klassen (mit Attributen und Methoden)
-- [ ] Einfach-Vererbung
+- [x] Funktionen (Definition, Deklaration, Aufrufe)
+- [x] Klassen (mit Attributen und Methoden)
+- [x] Einfach-Vererbung
 - [ ] Polymorphie (dynamisch, statisch)
 - [x] Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
 
@@ -166,11 +158,42 @@ Interpreter - Beim zuweisen von Variablen, genauso wie in der Symboltabelle, von
 
 
 # Sonstiges & TODOs
-Fehlerbehandungen und Null checks 
-Funktionen und wiederholenden Code auslagern 
-Code Kommentieren 
-Was ist mit Rekursivität 
-Was passiert, wenn ich in  &x = y; und dann &x = z
+- Fehlerbehandungen und Null checks 
+- Funktionen und wiederholenden Code auslagern 
+- Code Kommentieren 
+- Was passiert, wenn ich in  &x = y; und dann &x = z
+- System.out.println - Prüfen und unnötige löschen
+- Bei allen Expressions prüfen, ob dort auch die Werte zurückgegeben werden. BSP Assignold liefert neuen Wert zurück
+- Alle Kommentare und ausgaben auf Englisch umschrieben 
+
+
+
+
+
+# Vorstellung
+- Grammatik 
+- AST
+	- Funktionen Parametertypenprüfungen 
+- Scope Erstellung und Verwaltung 
+- Interpreter
+	- Referenzen Umsetzung und Erklärung, vor allem auch im Interpreter 
+	- Mathhelper und Konvertierung im Interpreter 
+
+Semantische Analyse und Laufzeitanalyse 
+Mathematische Funktion implementieren, anhand welcher der Typenvergleich, Parameter und auch Klassen, wenn es eine Klassenfunktion ist, gezeigt werden können - Auch überladungen können hier gezeigt werden 
+Wie werden Funktionen gespeichert und wiedergefunden? 
+
+
+
+# Einschränkungen in die Abgabe mit reinschreiben. 
+- Parameter müssen in Klassen, genauso wie im restlichen Codeablauf, vor ihrer ersten Verwendung Deklariert werden. Das heißt, bevor ich auf eine Variabe im Konstruktor zum Beispiel zugreife, muss diese in der Klasse schon bekannt sein 
+- Variablen werden zufällig initialisiert, da dies in c++ genauso ist (Man weis nicht was in der Variable steht)
+
+
+
+
+
+// Prüfen der Typen nach der Zuweisung, anhand des Attributs rtype, welches in den Knoten gespeichert wurde
 
 
 
@@ -179,10 +202,11 @@ Was passiert, wenn ich in  &x = y; und dann &x = z
 
 
 
-# Vorstellung 
-- Referenzen Umsetzung und Erklärung, vor allem auch im Interpreter 
-- Mathhelper und Konvertierung im Interpreter 
-- 
+
+
+
+
+
 
 
 

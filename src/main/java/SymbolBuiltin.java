@@ -1,4 +1,4 @@
-import java.util.List;
+// Symbol für Builtins im AST
 
 public class SymbolBuiltin extends Symbol{
     public SymbolBuiltin(String name) {

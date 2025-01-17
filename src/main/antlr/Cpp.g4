@@ -16,7 +16,6 @@ stmt                : declfunc ';'                                              
                     | classdef                                                                      # classsstm
                     | openscope stmt+ closescope                                                    # block
                     | RETURN expr? ';'                                                              # return
-                    | expr ';'                                                                      # exprstmt
                     ;
 body                : stmt+;
 ////
@@ -71,7 +70,7 @@ assignold           : (assignvar | assignarrayelement | assignclassvar | assignn
 
 
 // Klassen und Konstruktoren
-classdef            : (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? openscope 'public' ':' (constructor | destruct /*| overridefunc | abstractfunc*/ | stmt)* closescope ';'
+classdef            : 'class' ID vererbung? '{' 'public' ':' (constructor | destruct /*| overridefunc | abstractfunc*/ | stmt)* '}' ';'
                     ;
 //Konstruktor hat keine Rückgabe == Unterscheidung zu Funktionen
 constructor         : ID '(' defparamlist ')'  openscope body? closescope   ';'?
@@ -96,13 +95,11 @@ vererbung           : ':' 'public'? ID
 // Function
 abstractfunc        : const? '=' NUM ';'?; // Hier wirde NUM gewählt, da bei der direkten Eongabe von 0 gab es Probleme beim Lexer
 declfunc            : VIRTUAL? (basetype REF?| VOID) ID '(' defparamlist ')' abstractfunc? ';'? ;
-deffunc             : (basetype REF?| VOID) ID '(' defparamlist ')' (const? OVERRIDE)? openscope body closescope ';'?       # funcdef
-                    | (basetype REF?| VOID)? ID'::'ID '(' defparamlist ')' openscope body closescope  ';'?                  # classfunc
+deffunc             : VIRTUAL? (basetype REF?| VOID) ID '(' defparamlist ')' (const? OVERRIDE)? openscope body closescope ';'?       # funcdef
                     ;
 // Es kann nicht unterschieden werden zwischen einem Funktionsaufruf und einem Konstruktoraufruf, der ja auch eine Funktion ist
 callfunc            : ID '(' callparamlist ')'
                     | ID'.'ID '(' callparamlist ')'
-                    | ID'::'ID '(' callparamlist ')'
                     ;
 
 defparamlist        : ((defparam)(',' defparam)* | );
@@ -144,8 +141,9 @@ expr                : expr '*' expr                                             
                     | ID '--'                                                                 # dec
                     | expr com expr                                                             # compare
                     | callfunc                                                                  # call
-                    | ID'.'ID                                                                   # classvar
+                    | ID '[' expr ']' '.' ID                                                    # classarrayelem
                     | ID '[' expr ']'                                                           # arrayelem
+                    | ID'.'ID                                                                   # classvar
                     | NUM                                                                       # num
                     | ID                                                                        # id
                     | CHAR                                                                      # char
@@ -201,7 +199,6 @@ TYPE        : 'char'
             | 'bool'
             ;
 EXPLIZIT    : 'explicit';
-ABSTRACT    : 'abstract';
 REF         : '&';
 NUM         : [0-9]+;
 ID          : [a-zA-Z_][a-zA-Z0-9_]*;

@@ -1,11 +1,15 @@
-public class Clazz extends Struct {
-    public Clazz parentClazz;
+// Klasse zum Speichern von Klassen im AST und zum Auflösen von Membern
 
-    public Clazz(String name, Clazz parent, Scope scope) {
+public class SymbolClazz extends SymbolStruct {
+    public SymbolClazz parentClazz;
+
+    // Konstruktor
+    public SymbolClazz(String name, SymbolClazz parent, Scope scope) {
         super(name, scope);
         this.parentClazz = parent;
     }
 
+    // Auflösen von Symbolen bis hin zum BasisScope
     public Symbol resolve(String key) {
         // Suche Symbol im aktuellen Scope
         Symbol s = scope.scope.get(key);
@@ -18,6 +22,7 @@ public class Clazz extends Struct {
         return null;
     }
 
+    // Auflösen von Membern in der Klasse oder der Basisklasse
     @Override
     public Symbol resolveMember(String name) {
         if (name == null) return null;
@@ -26,5 +31,4 @@ public class Clazz extends Struct {
         if (parentClazz != null) return parentClazz.resolveMember(name);
         return null;
     }
-
 }

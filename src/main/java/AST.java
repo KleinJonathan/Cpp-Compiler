@@ -1,15 +1,15 @@
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
+// Klasse für den AST
 public class AST {
+    // Enum Types für den AST
     enum Types {
         START,
         SCOPE,
 
         UNDEFINED,
 
-        // Charaktere
+        // Literale
         ID,
         NUM,
         CHAR,
@@ -26,8 +26,6 @@ public class AST {
         SUBEQ,
         INC,
         DEC,
-
-        COMPARE,
 
         // Assign
         ARRAYASSIGN,
@@ -82,6 +80,7 @@ public class AST {
         LOWER_EQUAL,
     }
 
+    // Klassenvariablen
     Types asttype;
     String value;
     ArrayList<AST> kinder = new ArrayList<>();
@@ -93,12 +92,14 @@ public class AST {
     // Es wurde jedem Knoten möglichst ein Typ zugewiesen, um die spätere Typenüberprüfung zu erleichtern z.b. Mul...
     String rtype;
 
+    // Konstruktor
     public AST(String v, Types t, AST p){
         this.value = v;
         this.asttype = t;
         this.prev = p;
     }
 
+    // Konstruktor
     public AST(String value, Types type, AST ast, Scope scope, Symbol symbol, Boolean isConst){
         this.value = value;
         this.asttype = type;
@@ -108,11 +109,12 @@ public class AST {
         this.isConst = isConst;
     }
 
+    // Hinzufügen eines Kinds zu einem Knoten
     void addChild(AST a){
         this.kinder.add(a);
     }
 
-    // Ausgeben des AST und aller Kinder auf der Konsole in einer Baumstruktur
+    // Ausgeben des AST und aller Kinder auf der Konsole in einer Baumstruktur basierend auf einem Basisknoten
     public void printAST(AST node, String prefix) {
         if (node.kinder.isEmpty()) {
             // Blattknoten
@@ -125,18 +127,5 @@ public class AST {
         for (AST child : node.kinder) {
             printAST(child, prefix + "  ");
         }
-    }
-
-    // Überprüfen, ob ein Knoten ein Blattknoten ist
-    public List<String> checkTerminal(AST node, List<String> terminalTypes) {
-        if (node.kinder == null || node.kinder.isEmpty()) {
-            terminalTypes.add(node.asttype.toString());
-        } else {
-            // Nicht-terminaler Knoten
-            for (AST child : node.kinder) {
-                checkTerminal(child, terminalTypes);
-            }
-        }
-        return terminalTypes;
     }
 }

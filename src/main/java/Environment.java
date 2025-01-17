@@ -10,7 +10,6 @@ public class Environment {
 
 
     public void assign(String key, Object value) {
-        //System.out.println("Assign: " + key + " : " + value);
         if (values.containsKey(key)) {
             Variable var = values.get(key);
             var.value = value;
@@ -37,10 +36,44 @@ public class Environment {
         } else if (prevenv != null) {
             return prevenv.get(key);
         } else {
-            System.out.println("Variable " + key + " not defined - Error in get");
+            //System.out.println("Variable " + key + " not defined - Error in get in Environment File");
             return null;
         }
     }
+
+    public Object getClassMember(String key, String className) {
+        Variable value = values.get(className);
+        //System.out.println("ClassMember in getClassMember: " + key + " - " + className + " - " + value);
+        if (value != null) {
+            //System.out.println("ClassMember: " + key + " - " + className + " - " + value + " - " + value.value.getClass().getName());
+            if (value.value instanceof VariableClazz) {
+                VariableClazz var = (VariableClazz) value.value;
+                return var.env.values.get(key);
+            } else {
+                Environment env = (Environment) value.value;
+                return env.values.get(key);
+            }
+        } else if (prevenv != null) {
+            return prevenv.getClassMember(key, className);
+        } else {
+            //System.out.println("Variable " + key + " not defined - Error in get in Environment File");
+            return null;
+        }
+    }
+
+    public Variable getClassMemberVariable(String key, String className) {
+        Variable value = values.get(className);
+        if (value != null) {
+            System.out.println(value.getClass());
+            Environment env = (Environment) value.value;
+            return env.values.get(key);
+        } else if (prevenv != null) {
+            return prevenv.getClassMemberVariable(key, className);
+        } else {
+            return null;
+        }
+    }
+
 
     public Variable getVariable(String key) {
         Variable value = values.get(key);
@@ -49,17 +82,17 @@ public class Environment {
         } else if (prevenv != null) {
             return prevenv.getVariable(key);
         } else {
-            System.out.println("Variable " + key + " not defined");
             return null;
         }
     }
 
 
+
+
     public void print(){
         for (String key : values.keySet()) {
-            System.out.println(key + " : " + values.get(key));
+            System.out.println(key + " : " + values.get(key).value);
         }
-
     }
 
 }

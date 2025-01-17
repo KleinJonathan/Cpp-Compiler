@@ -11,23 +11,25 @@ public:     // es reicht, wenn alles public ist (hier nur, damit das Beispiel mi
 
 class B {
 public:     // es reicht, wenn alles public ist (hier nur, damit das Beispiel mit g++ kompiliert)
+    int value;
     B() { value = 0; }
     B(int x) { value = x; }
     B(B& rhs) { value = rhs.value; }
-    B& operator=(const B& rhs) {
-        this->value = rhs.value;    // "this" sollte erkannt werden
-        return *this;               // dito braucht man ein "*this" ...
+    /*
+    B& operator=(B& rhs) {  // Zuweisung ist der einzige notwendige Operator
+        value = rhs.value;
+        return *this;       // "this" und "*this" sollten im Klassenkontext erkannt werden
     }
+    */
 
-    int value;
 };
 
 class C {
 public:     // es reicht, wenn alles public ist (hier nur, damit das Beispiel mit g++ kompiliert)
+    int value;
     C() { value = 0; }
     C(int x) { value = x; }
 
-    int value;
 };
 
 
