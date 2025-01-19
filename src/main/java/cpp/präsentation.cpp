@@ -59,7 +59,7 @@ int main() {
     y.math(1,1,1);
     print_int(a);
 
-    // Hier sieht man, dass x die Funktion aus A aufruft und das Erbebniss resultA verändert
+    // Hier sieht man, dass die Funktion von B verwendet wird - Also dynamische polymorphie
     print_int(x.math(1,1,1));
 
     return 0;
