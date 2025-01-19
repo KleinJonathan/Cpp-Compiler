@@ -12,12 +12,13 @@ stmt                : declfunc ';'                                              
                     | assignold ';'                                                                 # assign2
                     | ifelseblock                                                                   # ifelseblock1
                     | whileconn openscope body closescope                                           # whileblock
-                    | builtin '(' expr (',' expr)* ')' ';'                                          # builtinstmt
+                    | builtin '(' expr ')' ';'                                                      # builtinstmt
                     | classdef                                                                      # classsstm
-                    | openscope stmt+ closescope                                                    # block
+                    | openscope (stmt | expr ';' )+ closescope                                           # block
                     | RETURN expr? ';'                                                              # return
                     ;
-body                : stmt+;
+//body                : (expr | stmt)+;
+body                : (stmt | expr ';')+;
 ////
 ////
 
@@ -52,8 +53,7 @@ arraysize           : expr;
 assignclassvar      : ID'.'ID SET expr
                     | ID '[' expr ']' '.' ID SET expr
                     ;
-assignnewclass      : REF ID                        // Student &s = Student();
-                    | ID
+assignnewclass      : ID
                     | ID SET callfunc                 //Student s = Student();
                     | ID '(' callparamlist ')'              // Student s(5);
                     ;
@@ -118,8 +118,8 @@ builtin             : 'print_bool'                                              
 
 // IF ELSE WHILE
 ifelseblock         : ifconn ifblock elseblock?;
-ifblock             : openscope body? closescope;
-elseblock           : ELSE (ifelseblock | openscope body? closescope);
+ifblock             : openscope body closescope;
+elseblock           : ELSE (ifelseblock | openscope body closescope);
 ifconn              : IF '(' (expr | decl | assignnew | assignold | assignclassvar) (com expr)* ')'
                     ;
 whileconn           : WHILE '(' (expr | decl | assignnew | assignold | assignclassvar) (com expr)* ')'
@@ -130,15 +130,15 @@ whileconn           : WHILE '(' (expr | decl | assignnew | assignold | assigncla
 
 // Expression
 expr                : expr '*' expr                                                             # mul
-                    | ID '*=' expr                                                            # muleq
+                    | ID '*=' expr                                                              # muleq
                     | expr '/' expr                                                             # div
-                    | ID '/=' expr                                                            # diveq
+                    | ID '/=' expr                                                              # diveq
                     | expr '+' expr                                                             # add
-                    | ID '+=' expr                                                            # addeq
-                    | ID '++'                                                                 # inc
+                    | ID '+=' expr                                                              # addeq
+                    | ID '++'                                                                   # inc
                     | expr '-' expr                                                             # sub
-                    | ID '-=' expr                                                            # subeq
-                    | ID '--'                                                                 # dec
+                    | ID '-=' expr                                                              # subeq
+                    | ID '--'                                                                   # dec
                     | expr com expr                                                             # compare
                     | callfunc                                                                  # call
                     | ID '[' expr ']' '.' ID                                                    # classarrayelem

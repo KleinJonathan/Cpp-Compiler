@@ -4,28 +4,33 @@ import java.util.Map;
 
 
 public class Interpreter {
+    // Speichern verschiedener Werte und Umgebungen
     AST root;
     Map<String, Symbol> scope = new HashMap<>();
-
     Environment environment = new Environment(null);
 
-
+    // Starte das Interpretieren des AST
     public void interpret(AST root){
         this.root = root;
         eval(root);
     }
 
+    // Auswerten des AST
+    // Der gesammte AST wird rekurisv mit dieser Funktion durchlaufen abhängig von dem Typ des Knotens ausgewertet
     public Object eval(AST t){
         if (t == null) return null;
 
+        // Auswerten des AST abhängig von dem Typ des Knotens
         switch (t.asttype) {
+        // Startknoten
         case START:
             // Durchlaufen des gesammten AST
             for (AST c : t.kinder) {
                 eval(c);
             }
 
-            // Main Funktion finden und ausführen
+            // Nach durchlaufen des gesammten AST Main Funktion finden und ausführen
+            // Suchen der Main Funktion
             VariableFunction main = null;
             for (String key : environment.values.keySet()) {
                 if (key.contains("main[")) {
@@ -33,8 +38,10 @@ public class Interpreter {
                 }
             }
             if (main == null) {
-                throw new RuntimeException("No main function found");
+                throw new RuntimeException("Keine Mainfunktion gefunden");
             } else {
+                // Ausführen der Main Funktion
+                // Catchen der Rückgabe der Main Funktion
                 try {
                     for (AST c : main.ast.kinder) {
                         eval(c);
@@ -44,8 +51,9 @@ public class Interpreter {
                 }
             }
             break;
+
+        // Return Statement - Rückgabe des Wertes
         case RETURN:
-            // TODO - Bei rückgabe von Referenzen muss ich die Variable und nicht den Wert zurückgeben - Was passiert bei Lokalen Variablen?
             if (t.kinder.size() > 0){
                 Object returnvalue = eval(t.kinder.get(0));
                 if (returnvalue instanceof String){
@@ -55,29 +63,43 @@ public class Interpreter {
             } else {
                 return null;
             }
+
+        // Zuweisungen einer neuen Variable
         case ASSIGNNEW:
+            // Prüfen, ob es sich um eine Klasseninstanz handelt
             if (t.kinder.get(0).asttype == AST.Types.ASSIGNCLASS){
+                // Erstellen eines Objekts
                 createClassObject(t.kinder.get(0), false);
             } else {
-                // TODO - Was passiert bei einer reinen dekklaration? Welcher Wert wird zugewiesen?
+                // Prüfen, ob es sich um eine Variable mit Basistyp handelt
                 if (t.rtype.equals("int") || t.rtype.equals("char") || t.rtype.equals("bool")){
                     String assignnewid = t.value;
                     Object assignnewvalue = eval(t.kinder.get(0));
                     environment.define(assignnewid, assignnewvalue);
+                // Hier ist der Fall, dass um eine Klasseninstanz handelt
                 } else {
-                    System.out.println("Die erstellung und der Zugriff von Klassenobjekten in Arrays wird nicht unterstützt");
-                    //createClassObject(t, true);
+                    if (t.kinder.get(0).asttype == AST.Types.ID){
+                        t.kinder.addFirst(new AST(t.rtype, AST.Types.CLASS, t));
+                        createClassObject(t, false);
+                    } else {
+                        createClassObject(t, true);
+                    }
                 }
 
             }
+            // Rückgabe des Wertes der Expression
             return environment.get(t.value);
+
+        // Zuweisungen einer bereits existierenden Variable
         case ASSIGNOLD:
+            // Prüfen, ob es sich um eine "Normale" Variable handelt
             if (t.kinder.get(0).asttype == AST.Types.ID){
                 Object assignoldvalue = eval(t.kinder.get(0));
                 if (assignoldvalue instanceof String){
                     assignoldvalue = environment.get((String) assignoldvalue);
                 }
                 environment.assign(t.value, assignoldvalue);
+            // Prüfen, ob es sich um eine Klasseninstanz handelt
             } else  if (t.kinder.get(0).asttype == AST.Types.CLASS){
                 Environment clazzAssignOld = (Environment) (environment.getVariable(t.kinder.get(0).value)).value;
                 clazzAssignOld.assign(t.value, eval(t.kinder.get(1)));
@@ -85,73 +107,140 @@ public class Interpreter {
                 Object assignoldvalue = eval(t.kinder.get(0));
                 environment.assign(t.value, assignoldvalue);
             }
+            // Rückgabe des Wertes der Expression
             return environment.get(t.value);
+
+        // Öffnen eines neuen Scopes und damit einer neuen Umgebung
         case SCOPE:
+            // Neue Umgebung erstellen
             environment = new Environment(environment);
+            // Evaluation der Kinder
             for (AST c : t.kinder) {
                 eval(c);
             }
+            // Umgebung zurücksetzen
             environment = environment.prevenv;
             break;
+
+        // Deklaration einer neuen Variable
         case DECLARATION:
             String declarationid = t.value;
             // Prüfen, ob Variable schon existiert
-            if (environment.getVariable(declarationid) == null){
-                // Die Basistypen bekommen wie in c++ zufällige werte, welche dann in den jeweiligen Typ interpretiert werden
+            if (environment.getVariable(t.value) == null){
+                // Die Basistypen bekommen zufällige Werte
+                // Verhaltensweise in C++ soll imitiert werden, wo in dem Speicher zufällige Werte stehen
+                // Interpretieren der Werte in den jeweiligen Typ
                 if (t.rtype.equals("int")){
-                    environment.define(declarationid, (int) (Math.random()*1000000));
+                    environment.define(t.value, (int) (Math.random()*1000000));
                 } else if (t.rtype.equals("char")){
-                    environment.define(declarationid, (char) (Math.random()*26 + 'a'));
+                    environment.define(t.value, (char) (Math.random()*26 + 'a'));
                 } else if (t.rtype.equals("bool")){
-                    environment.define(declarationid, (boolean) (Math.random() > 0.5));
+                    environment.define(t.value, (Math.random() > 0.5));
                 } else {
-                    System.out.println("Die erstellung und der Zugriff von Klassenobjekten in Arrays wird nicht unterstützt");
-                    //createClassObject(t, true);
+                    // Declaration einer Klasse = Erstellung eines Klassenobjekts
+                    createClassObject(t, true);
                 }
-            } else {
-                System.out.println("Variable " + declarationid + " already defined");
             }
-            break;
+            // Rückgabe des Wertes der Expression
+            return environment.get(t.value);
+
+        // Declaration eines neuen Arrays
         case ARRAYDECLARATION:
-            String arraydeclarationid = t.value;
+            // Ermitteln der Arraygröße und erstellen des Arrays
             int arraydeclerationsize = (Integer) eval(t.kinder.get(0));
             Object[] arraydeclaration = new Object[arraydeclerationsize];
+            // Durchlaufen des Arrays und Zuweisung von Werten
             for (int i = 0; i < arraydeclerationsize; i++){
                 if (t.rtype.equals("int")){
                     arraydeclaration[i] = (int) (Math.random() * 1000000);
                 } else if (t.rtype.equals("char")){
                     arraydeclaration[i] = (char) (Math.random() * 26 + 'a');
                 } else if (t.rtype.equals("bool")){
-                    arraydeclaration[i] = (boolean) false;
+                    arraydeclaration[i] = Math.random() > 0.5;
                 } else {
                     // TODO - Fehlerbehandlung und Klassenerstellung
-                    System.out.println("Die erstellung und der Zugriff von Klassenobjekten in Arrays wird nicht unterstützt");
+                    // Arrays aus Objekten werden nicht unterstützt
+                    //System.out.println("Die erstellung und der Zugriff von Klassenobjekten in Arrays wird nicht unterstützt");
                     //arraydeclaration[i] = createClassObject(t, true);
                 }
             }
-            environment.define(arraydeclarationid, arraydeclaration);
-            break;
+            // Array in der Umgebung speichern und Rückgabe des Wertes
+            environment.define(t.value, t.value);
+            return environment.get(t.value);
+
+        // Referenz auf eine Variable
         case REF:
-            System.out.println("Ref 123 " + t.kinder.size());
+            // Das Prinzip der Referenz ist, dass im Hintergrund eine Tatsächliche Referenz auf die Variable gespeichert wird
+            // Darüf dient die "Wrapperklasse" Variable, welche den Wert als Objekt speichert
+
+            // Ermitteln, ob es sich um eine Referenz auf eine Variable oder auf eine Klasseninstanz handelt
             if (t.kinder.size() == 1){
-                Variable refVar = environment.getVariable(t.kinder.get(0).value);
-                environment.defineReference(t.value, refVar);
+                // Prüfen, ob es sich um eine Klasseninstanz handelt
+                // => Dynamische Polymorphie
+                if (environment.get(t.symbol.type.name) instanceof VariableClazz) {
+                    // Ermitteln der Klasse
+                    VariableClazz refPolyClazz = (VariableClazz) environment.get(t.symbol.type.name);
+                    // Zu referenzierende Variable
+                    Variable refVar = environment.getVariable(t.kinder.get(0).value);
+                    // Objekt
+                    Environment refVarEnv = (Environment) refVar.value;
+
+                    // Speichern des aktuellen Environments
+                    Environment refPrePolyEnv = environment;
+
+                    // Neues Environment für das Objekt erstellen
+                    Environment newRefEnv = new Environment(environment);
+                    environment = newRefEnv;
+
+                    // Durchlaufen der Klassenvariablen und speichern in der neuen Umgebung
+                    for (Map.Entry<String, Variable> entry : refVarEnv.values.entrySet()) {
+                        environment.defineReference(entry.getKey(), entry.getValue());
+                    }
+
+                    // Durchlaufen der Klassenfunktionen und speichern in der neuen Umgebung
+                    // Die Funktionen aus der Oberklasse überschreiben die Funktionen aus der Unterklasse
+                    for (AST c : refPolyClazz.ast.kinder) {
+                        if (c.asttype == AST.Types.FUNCTION_DEF) {
+                            SymbolFunction funcSymbolFuncDef = (SymbolFunction) c.symbol;
+                            // Prüfen, ob es sich um eine abstrakte Funktion handelt - Diese wird dann in der Unterklasse überschrieben
+                            if (funcSymbolFuncDef.abstractFunction){
+                                eval(c);
+                            }
+                        }
+                    }
+
+                    // Umgebung zurücksetzen und Referenz speichern und zurückgeben
+                    environment = refPrePolyEnv;
+                    environment.defineReference(t.value, new Variable(newRefEnv));
+                    return newRefEnv;
+                } else {
+                    // Referenz speichern und zurückgeben
+                    Variable refVar =  environment.getVariable(t.kinder.get(0).value);
+                    environment.defineReference(t.value, refVar);
+                    return refVar;
+                }
             } else {
+                // Referenz speichern und zurückgeben
                 Variable refVar = environment.getClassMemberVariable(t.kinder.get(1).value, t.kinder.get(0).value);
                 environment.defineReference(t.value, refVar);
+                return refVar;
             }
-            break;
+
+        // Zuweisen eines Arrayelements
         case ASSIGNARRAYELEMENT:
+
             Object assignarrayelementindex = eval(t.kinder.get(0));
             Object assignarrayelementarray = environment.get(t.value);
+            // Prüfen, ob es sich um ein Array handelt
             if (assignarrayelementarray instanceof Object[]){
                 if (t.kinder.get(0).asttype == AST.Types.ID){
                     assignarrayelementindex = environment.get(t.kinder.get(0).value);
                 }
+                // Prüfen, ob der Index im Array liegt
                 if ((Integer) assignarrayelementindex >= ((Object[]) assignarrayelementarray).length){
                     throw new RuntimeException("Array index out of bounds");
                 }
-
+                // Wert zuweisen
                 if (t.kinder.get(1).asttype == AST.Types.ID){
                     ((Object[]) assignarrayelementarray)[(Integer) assignarrayelementindex] = environment.get(t.kinder.get(1).value);
                 } else {
@@ -163,17 +252,18 @@ public class Interpreter {
                 throw new RuntimeException("Array: " + t.value + " is not an array");
             }
             break;
+
+        // Rpckgabe der Arraygröße
         case ARRAYSIZE:
             return (Integer) eval(t.kinder.get(0));
-        case INCARRAY:
-            return null;
-        case DECARRAY:
-            return null;
+
+        // Zuweisung eines neuen Arrays
         case ARRAYASSIGN:
+            // Ermitteln der Arraygröße und erstellen eines Arrays
             int arrayassignsize = (Integer) eval(t.kinder.get(0)) == null ? 1 : (Integer) eval(t.kinder.get(0));
-            String arrayassignid = t.value;
             Object[] arrayassign = new Object[arrayassignsize];
             // Durchlaufen des Arrays und der Kinder und Zuweisung der Werte, falls vorhanden ansonsten Zufallswerte
+            // Bsp: int[10] a = {1,2,3}; => Fehlende Werte werden mit Zufallswerten gefüllt
             for (int i = 0; i < arrayassignsize; i++){
                 Object arrayassignvalue = null;
                 // Prüfen, ob es ausreichend initialisierungen gibt
@@ -198,66 +288,80 @@ public class Interpreter {
                     } else if (t.rtype.equals("bool")) {
                         arrayassign[i] = (boolean) false;
                     } else {
-                        System.out.println("Die erstellung und der Zugriff von Klassenobjekten in Arrays wird nicht unterstützt");
+                        // TODO - Fehlerbehandlung und Klassenerstellung
+                        // Arrays aus Objekten werden nicht unterstützt
+                        //System.out.println("Die erstellung und der Zugriff von Klassenobjekten in Arrays wird nicht unterstützt");
                         //arrayassign[i] = createClassObject(t, false);
                     }
                 }
             }
-            // Array in der Umgebung speichern
-            environment.define(arrayassignid, arrayassign);
-            break;
+            // Array in der Umgebung speicher und zurückgeben
+            environment.define(t.value, arrayassign);
+            return environment.get(t.value);
+
+        // Rückgabe eines Arrayelements
         case ARRAYELEMENT:
+            // Ermittlen des Indexes und des Arrays
             Object arrayelementindex = eval(t.kinder.get(0));
             Object arrayelementarray = environment.get(t.value);
             if (arrayelementarray instanceof Object[]){
                 if (t.kinder.get(0).asttype == AST.Types.ID){
                     arrayelementindex = environment.get(t.kinder.get(0).value);
                 }
+                // Prüfen, ob der Index im Array liegt
                 if ((Integer) arrayelementindex >= ((Object[]) arrayelementarray).length){
                     throw new RuntimeException("Array index out of bounds");
                 }
+                // Rückgabe des Wertes
                 return ((Object[]) environment.get(t.value))[(Integer) arrayelementindex];
             } else {
                 throw new RuntimeException("Array: " + t.value + " is not an array");
             }
 
 
-            //
-            // Klassen
-            //
+        //
+        // Klassen
+        //
+        // Erstellen eines Klassenobjekts
         case ASSIGNCLASS:
             if (t.kinder.get(0).asttype == AST.Types.CLASS && t.kinder.size() > 1){
                 createClassObject(t, false);
             }
             break;
+
+        // Klasseninstanz / Regel wird nicht benötigt
         case CLASS:
-            //System.out.println("Class: " + t.value);
-            // TODO - Klassen erstellen und speichern
             break;
+
+        // Klassendefinition
         case CLASSDEF:
-            //System.out.println("Enter classdef " + t.value);
+            // Umgebung speichern und neue Umgebung erstellen
             Environment preenvironmentclassdef = environment;
             environment = new Environment(environment);
+            // Evaluation des ASTs und erstellen der "Klassensignatur"
             for (AST c : t.kinder) {
                 eval(c);
             }
-            Environment classdefEnvironment = environment;
 
+            // Umgebung zurücksetzen
+            Environment classdefEnvironment = environment;
             environment = preenvironmentclassdef;
 
-            // Ermitteln der Eltern und speichern
+            // Ermitteln der Eltern und speichern und falls vorhanden speichern der Elternklasse
             VariableClazz parent = null;
             if (t.kinder.get(0).asttype == AST.Types.PARENT){
-                //System.out.println("Parent: " + t.kinder.get(0).value);
-                //System.out.println((environment.get(t.kinder.get(0).value)).getClass());
                 parent = (VariableClazz) ((Variable) environment.getVariable(t.kinder.get(0).value)).value;
             }
             VariableClazz classdefVar = new VariableClazz(t, classdefEnvironment, parent);
 
+            // Speichern der Klasse in der Umgebung
             environment.define(t.value, classdefVar);
-            //System.out.println("exit classdef");
             break;
+
+        // Konstruktor
         case CONSTRUCTOR:
+            // Prüfen, ob es sich um eine abstrakte Funktion handelt
+            // Der Kopykonstruktor wird im AST nur Deklariert um diesen zu unterstützen
             if (!((SymbolFunction) t.symbol).decl){
                 // Speichern der Funktion als SymbolFunction, da dort bereits der AST gespeichert ist
                 SymbolFunction funcSymbolConstructor = (SymbolFunction) t.symbol;
@@ -267,67 +371,71 @@ public class Interpreter {
                 environment.define(t.symbol.name, varFunctionDef);
             }
             break;
-        case DESTRUCTOR:
-            System.out.println("Destructor: " + t.value);
-            // TODO - Destruktoren erstellen und speichern
-            break;
-        case PARENT:
-            //System.out.println("Parent: " + t.value);
-            // TODO - Vererbung
-            break;
 
+        // Destruktor - Werden nicht unterstützt und ausgeführt
+        case DESTRUCTOR:
+            // TODO - Destruktoren erstellen und speichern
+            System.out.println("Destructor: " + t.value);
+            break;
+        // Elternklasse
+        case PARENT:
+            break;
 
 
         //
         // Funktionen
         //
+        // Funktionsdeklaration
         case FUNCTION_DEC:
+            // Speichert ausschließlich abstrakte Funktionsdeclarationen
+            // Die restlichen Funktionsdeclarationen werden nicht benötigt, da sie nicht ausgeführt werden können
+            // Speichern des AST und der Umgebung
             SymbolFunction funcSymbolFuncDec = (SymbolFunction) t.symbol;
             if (funcSymbolFuncDec.abstractFunction){
-                // Speichern der Funktion als SymbolFunction, da dort bereits der AST gespeichert ist
                 VariableFunction abstractFunc = new VariableFunction(funcSymbolFuncDec.functionAST, environment);
                 abstractFunc.abstractFunction = true;
                 // Aktuelle Umgebung in der Funktionsdefinition speichern
                 // Funktionen in das Environment speichern
                 environment.define(t.symbol.name, abstractFunc);
             }
-                /*
-                TODO - Funktionsdeclarationen müssen nicht in dem Environment gespeichert werden - Definitionen schon
-                 Oder doch? Was passiert bei Aufrufen, welche ich vor der Definition gemacht habe?
-                 Diese sind dann noch nicht im Environment gespeichert
-                */
             break;
+        // Funktionsdefinition
         case FUNCTION_DEF:
-            // Speichern der Funktion als SymbolFunction, da dort bereits der AST gespeichert ist
+            // Speichern von Funktionsdefinitionen in dem aktuellen Environment zusammen mit dem AST,
+            // welcher die Funktion, die Parameter und die tatsächliche Funktion der Funktion speichert
             SymbolFunction funcSymbolFuncDef = (SymbolFunction) t.symbol;
             VariableFunction varConstructorDef = new VariableFunction(funcSymbolFuncDef.functionAST, environment);
             // Aktuelle Umgebung in der Funktionsdefinition speichern
             // Funktionen in das Environment speichern
             environment.define(t.symbol.name, varConstructorDef);
             break;
+        // Funktionsaufruf
         case FUNCTION_CALL:
+            // Speichern des aktuellen Environments
             VariableFunction funcFuncCall = null;
             Environment preenvironment = environment;
 
+            // Prüfen, ob es sich um eine Klassenfunktion handelt
             if (t.kinder.size() > 0 && t.kinder.getLast().asttype.equals(AST.Types.CLASS)){
-                // Abrufen der Klassenfunktion und setzen des Environments der Funktion auf das des Klassenobjekts
+                // Abrufen der Klassenfunktion
                 funcFuncCall = (VariableFunction) ((Variable) environment.getClassMember(t.symbol.name, t.kinder.getLast().value)).value;
-                // funcFuncCall.env = (Environment) environment.get(t.kinder.getLast().value);
             } else {
                 funcFuncCall = (VariableFunction) environment.get(t.symbol.name);
             }
 
+            // Prüfen, ob die Funktion existiert
             if (funcFuncCall == null){
                 throw new RuntimeException("Function " + t.symbol.name + " not defined");
             }
-            // Umgebung speichern
+
+            // Funktionsaufruf im aktuellen Environment und try-catch Block für das Return Statement
             try{
                 // Temporäre Umgebung für die Funktionsparameter erstellen
-                // Environment wird erst später gesetzt, um rekursion und verschachtelte Funktionsaufrufe zu ermöglichen
+                // Aktuelles Environment wird erst später gesetzt, um rekursion und verschachtelte Funktionsaufrufe zu ermöglichen
                 Environment funcEnvironment = new Environment(funcFuncCall.env);
-                funcEnvironment.print();
-                // Anzahl der Funktionsparameter
+                // Ermitteln der Anzahl der Funktionsparameter
                 int funcCallParams = funcFuncCall.ast.kinder.get(1).kinder.size();
+                // Sind Funktionsparameter vorhanden, werden diese in der temporären Umgebung evaluiert und gespeichert
                 if (funcCallParams > 0){
                     for (int i = 0; i < funcCallParams ; i++){
                         if (t.kinder.get(0).kinder.get(i).asttype == AST.Types.CLASS){
@@ -335,11 +443,11 @@ public class Interpreter {
                         }
                         Object funcCallArg = eval(t.kinder.get(0).kinder.get(i));
                         // Parameter auswerten
-                        // TODO - Je nach dem ob es sich um einer Refernz handelt oder nicht darf ich diese auswerten oder nicht
+                        // Auswerten von Variablen
                         if (funcCallArg instanceof String){
                             // Prüfen ob es sich um eine Referenz handelt
                             if (funcFuncCall.ast.kinder.get(1).kinder.get(i).asttype == AST.Types.REF){
-                                // Greifen des Referenzobjekts und speichern also tatsächloche Referenz in der neuen Variable
+                                // Greifen des Referenzobjekts und speichern der tatsächlichen Referenz in der neuen Variable
                                 Variable refVarFuncCall = preenvironment.getVariable((String) funcCallArg);
                                 funcEnvironment.defineReference(funcFuncCall.ast.kinder.get(1).kinder.get(i).value, refVarFuncCall);
                             } else {
@@ -347,6 +455,7 @@ public class Interpreter {
                                 funcCallArg = preenvironment.get((String) funcCallArg);
                                 funcEnvironment.define(funcFuncCall.ast.kinder.get(1).kinder.get(i).value, funcCallArg);
                             }
+                        // Auswerten von Ausdrücken
                         } else {
                             funcEnvironment.define(funcFuncCall.ast.kinder.get(1).kinder.get(i).value, funcCallArg);
                         }
@@ -356,10 +465,11 @@ public class Interpreter {
                 // Umgebung auf die Funktionsumgebung setzen
                 environment = funcEnvironment;
 
-                // Durchlaufen und ausführen der Funktion
+                // Durchlaufen/Evaluieren und ausführen der Funktion
                 for (AST c : funcFuncCall.ast.kinder.get(2).kinder) {
                     eval(c);
                 }
+            // Catchen des Rückgabewertes
             } catch (ReturnException e){
                 // Umgebung zurücksetzen und rückgabe aus der Funktion
                 environment = preenvironment;
@@ -367,8 +477,10 @@ public class Interpreter {
             }
             // Umgebung zurücksetzen
             environment = preenvironment;
-            break;
+            return null;
+        // Funktionsparameterliste evaluieren
         case PARAMLIST:
+            // Durchlaufen der Funktionsparameter und speichern in der Umgebung
             for (AST c : t.kinder) {
                 eval(c);
             }
@@ -377,29 +489,43 @@ public class Interpreter {
             break;
 
 
+        //
         // Kontrollstrukturen
+        //
+        // If-Else Block
         case AST.Types.IF_ELSE_BLOCK:
+            // Evaluieren der Condition
             Object if_else_block_condition = eval(t.kinder.get(0));
+            // Ausführen der des If oder Else Blocks abhängig von der Condition
             if (mathhelper(if_else_block_condition) != 0){
                 eval(t.kinder.get(1));
             } else {
                 eval(t.kinder.get(2));
             }
             break;
-
+        // While Block
         case AST.Types.WHILE_BLOCK:
+            // Evaluieren der Condition
             for (AST c : t.kinder) {
                 Object while_block_condition = eval(t.kinder.get(0));
+                // Ausführen des While Blocks solange die Condition erfüllt ist
                 while (mathhelper(while_block_condition) != 0){
+                    // Evaluieren des While Blocks
                     eval(t.kinder.get(1));
+                    // Erneutes Evaluieren der Condition
                     while_block_condition = eval(t.kinder.get(0));
                 }
             }
             break;
+        // If Block
         case AST.Types.IF_BLOCK:
+            // Evaluieren des Blocks
             return eval(t.kinder.get(0));
+        // Else Block
         case AST.Types.ELSE_BLOCK:
+            // Evaluieren des Blocks
             return eval(t.kinder.get(0));
+        // Evaluation der Condition und Rückgabe des Wertes
         case AST.Types.CONN:
             if (t.kinder.size() == 1){
                 return eval(t.kinder.get(0));
@@ -407,44 +533,59 @@ public class Interpreter {
             break;
 
 
-
-        // LOGISCHE OPERATIONEN TODO - Typen prüfen und Fehlerbehandlung - Was passiert beim Verlgiech von Objekten
+        //
+        // LOGISCHE OPERATIONEN
+        //
+        // =
         case AST.Types.EQUAL:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses als Boolean
             if (mathhelper(eval(t.kinder.get(0))) == mathhelper(eval(t.kinder.get(1)))){
                 return true;
             } else {
                 return false;
             }
+        // !=
         case AST.Types.NOT_EQUAL:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses als Boolean
             if (mathhelper(eval(t.kinder.get(0))) != mathhelper(eval(t.kinder.get(1)))){
                 return true;
             } else {
                 return false;
             }
+        // >
         case AST.Types.GREATER:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses als Boolean
             if (mathhelper(eval(t.kinder.get(0))) > mathhelper(eval(t.kinder.get(1)))){
                 return true;
             } else {
                 return false;
             }
+        // <
         case AST.Types.LOWER:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses als Boolean
             if (mathhelper(eval(t.kinder.get(0))) < mathhelper(eval(t.kinder.get(1)))){
                 return true;
             } else {
                 return false;
             }
+        // >=
         case AST.Types.GREATER_EQUAL:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses als Boolean
             if (mathhelper(eval(t.kinder.get(0))) >= mathhelper(eval(t.kinder.get(1)))){
                 return true;
             } else {
                 return false;
             }
+        // <=
         case AST.Types.LOWER_EQUAL:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses als Boolean
             if (mathhelper(eval(t.kinder.get(0))) <= mathhelper(eval(t.kinder.get(1)))){
                 return true;
             } else {
                 return false;
             }
+
+        // Evaluieren eines Blocks
         case AST.Types.BODY:
             for (AST c : t.kinder) {
                 eval(c);
@@ -452,14 +593,19 @@ public class Interpreter {
             break;
 
 
-
+        //
         // MATHEMATISCHE OPERATIONEN
-        // TODO Mathemathanische Operationen Typen prüfen und Fehlerbehandlung und Interoverflow
+        //
+        //
+        // +
         case AST.Types.ADD:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             Object addleft = eval(t.kinder.get(0));
             Object addright = eval(t.kinder.get(1));
             return mathhelper(addleft) + mathhelper(addright);
+        // +=
         case AST.Types.ADDEQ:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             String addeqvar = (String) eval(t.kinder.get(0));
             Object addeqvalue = eval(t.kinder.get(1));
             if (addeqvalue instanceof String){
@@ -468,11 +614,15 @@ public class Interpreter {
             Object resultqddey = mathhelper(environment.get(addeqvar)) + mathhelper(addeqvalue);
             environment.assign((String) addeqvar, resultqddey);
             return environment.get(t.kinder.get(0).value);
+        // -
         case AST.Types.SUB:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             Object subleft = eval(t.kinder.get(0));
             Object subright = eval(t.kinder.get(1));
             return mathhelper(subleft) - mathhelper(subright);
+        // -=
         case AST.Types.SUBEQ:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             String subeqvar = (String) eval(t.kinder.get(0));
             Object subeqvalue = eval(t.kinder.get(1));
             if (subeqvalue instanceof String){
@@ -481,11 +631,15 @@ public class Interpreter {
             Object resultsubeqddey = mathhelper(environment.get(subeqvar)) - mathhelper(subeqvalue);
             environment.assign((String) subeqvar, resultsubeqddey);
             return environment.get(t.kinder.get(0).value);
+        // *
         case AST.Types.MULL:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             Object mulleft = eval(t.kinder.get(0));
             Object mulright = eval(t.kinder.get(1));
             return mathhelper(mulleft) * mathhelper(mulright);
+        // *=
         case AST.Types.MULEQ:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             String muleqvar = (String) eval(t.kinder.get(0));
             Object muleqvalue = eval(t.kinder.get(1));
             if (muleqvalue instanceof String){
@@ -494,26 +648,34 @@ public class Interpreter {
             Object resultmuleqddey = mathhelper(environment.get(muleqvar)) * mathhelper(muleqvalue);
             environment.assign((String) muleqvar, resultmuleqddey);
             return environment.get(t.kinder.get(0).value);
+        // /
         case AST.Types.DIV:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             Object divleft = eval(t.kinder.get(0));
             Object divright = eval(t.kinder.get(1));
+            // Prüfen, ob durch 0 geteilt wird
             if (mathhelper(divright) == 0){
                 throw new RuntimeException("Division by zero");
             }
             return mathhelper(divleft) / mathhelper(divright);
+        // /=
         case AST.Types.DIVEQ:
+            // Evaluation der beiden Kinder und Rückegabe des Ergebnisses
             String diveqvar = (String) eval(t.kinder.get(0));
             Object diveqvalue = eval(t.kinder.get(1));
             if (diveqvalue instanceof String){
                 diveqvalue = environment.get((String) diveqvalue);
             }
+            // Prüfen, ob durch 0 geteilt wird
             if (mathhelper(diveqvalue) == 0){
                 throw new RuntimeException("Division by zero");
             }
             Object resultdiveqddey = mathhelper(environment.get(diveqvar)) / mathhelper(diveqvalue);
             environment.assign((String) diveqvar, resultdiveqddey);
             return environment.get(t.kinder.get(0).value);
+        // ++
         case AST.Types.INC:
+            // Incrementieren von Variablen
             int resultinc = 0;
             // Das incrementieren von Chars und Bools verhält sich eventuell anders als in C++
             if (AST.Types.ID == t.kinder.get(0).asttype){
@@ -522,7 +684,9 @@ public class Interpreter {
                 environment.assign(t.kinder.get(0).value, resultinc);
             }
             return resultinc;
+        // --
         case AST.Types.DEC:
+            // Dekrementieren von Variablen
             int resultdec = 0;
             // Das decrementieren von Chars und Bools verhält sich eventuell anders als in C++
             if (AST.Types.ID == t.kinder.get(0).asttype){
@@ -531,18 +695,31 @@ public class Interpreter {
                 environment.assign(t.kinder.get(0).value, resultdec);
             }
             return resultdec;
+
+
+        //
+        // BUILT-IN Funktionen
+        //
+        // print_int Funktionen
         case AST.Types.PRINT_INT:
+            // Evaluation der Funktion und Interpretation des Rückgabewertes als Integer
             System.out.println(builtinhelper(t));
             break;
+        // print_char Funktionen
         case AST.Types.PRINT_CHAR:
+            // Evaluation der Funktion und Interpretation des Rückgabewertes als Char
             System.out.println((char) builtinhelper(t));;
             break;
+        // print_bool Funktionen
         case AST.Types.PRINT_BOOL:
+            // Evaluation der Funktion und Interpretation des Rückgabewertes als Boolean
             System.out.println(builtinhelper(t) == 0 ? "false" : "true");
             break;
 
 
+        //
         // "Primitive" Datentypen auswerden und zurückgeben
+        //
         case AST.Types.NUM:
             return Integer.parseInt(t.value);
         case AST.Types.CHAR:
@@ -555,40 +732,48 @@ public class Interpreter {
             break;
         }
         return null;
-
     }
 
 
 
+    //
+    // Hilfsfunktionen
+    //
     // Hilfsfunktion zum Umrechnen von Objekten in Integer
     public int mathhelper(Object ob){
-        //System.out.println("Mathhelper1: " + ob + " - Type: " + ob.getClass().getSimpleName());
+        // Prüfen auf null
         if (ob == null) return 0;
+        // Casten der einzelnen Datentypen in Integer und auswerten von Klassenvariablen und normalen Variablen
         switch (ob.getClass().getSimpleName()){
-        case "Integer": ob = ob; break;
-        case "String":
-            //System.out.println("String in Mathhelper: " + ob);
-            Object obvar = environment.get((String) ob);
-            //System.out.println("String in Mathhelper obvar: " + obvar);
-            switch (obvar.getClass().getSimpleName()){
-            case "Integer": ob = obvar; break;
-            case "Character": ob = (int) (Character) obvar; break;
-            case "Boolean": ob = (Boolean) obvar ? 1 : 0; break;
-            }
-            break;
-        case "Character": ob = (int) (Character) ob; break;
-        case "Boolean": ob = (Boolean) ob ? 1 : 0; break;
-        case "Variable": ob = ((Variable) ob).value; break;
-        default: System.out.println("Default case in Mathhelper with Type: " + ob.getClass().getSimpleName()); break;
+            case "Integer": ob = ob; break;
+            // Variable
+            case "String":
+                Object obvar = environment.get((String) ob);
+                if (obvar == null){
+                    System.out.println("Variable " + ob + " not defined - Error in Mathhelper");
+                    return 0;
+                }
+                // Umwandlung von Variableinhalten in Integer
+                switch (obvar.getClass().getSimpleName()){
+                    case "Integer": ob = obvar; break;
+                    case "Character": ob = (int) (Character) obvar; break;
+                    case "Boolean": ob = (Boolean) obvar ? 1 : 0; break;
+                }
+                break;
+            case "Character": ob = (int) (Character) ob; break;
+            case "Boolean": ob = (Boolean) ob ? 1 : 0; break;
+            case "Variable": ob = ((Variable) ob).value; break;
+            default: System.out.println("Default case in Mathhelper with Type: " + ob.getClass().getSimpleName()); break;
         }
-        //System.out.println("Mathhelper2: " + ob + " - Type: " + ob.getClass().getSimpleName());
         return (Integer) ob;
     }
 
+    // Hilfsfunktion zum Auswerten von BUILT-IN Funktionen und Rückgabe als Integer mithilfe der mathhelper Funktion
     public int builtinhelper(AST a){
-        // Umwandlung von Objekten in Integer und auswerten fun Funktionen und Variablen
+        // Umwandlung von Objekten in Integer und auswerten von Funktionen und Variablen
         if (AST.Types.ID == a.kinder.get(0).asttype) {
             return(mathhelper(environment.get(a.kinder.get(0).value)));
+        // Auswerten von Klassenvariablen und Funktionen
         } else if (AST.Types.CLASS == a.kinder.get(0).asttype) {
             if (a.kinder.get(1).asttype == AST.Types.ID){
                 // Zugriff auf einfache ID
@@ -600,31 +785,23 @@ public class Interpreter {
                 } else {
                     return mathhelper((((Variable) environment.getClassMember((a.kinder.get(1).value).toString(), a.kinder.get(0).value)).value));
                 }
-
             } else {
-                Object varFuncPrintIntClass = environment.getClassMember(a.kinder.get(1).symbol.name, a.kinder.get(0).value);
-                VariableFunction funcFuncPrintIntClass = (VariableFunction) ((Variable) varFuncPrintIntClass).value;
-                //System.out.println(mathhelper(eval(funcFuncPrintIntClass.ast)));
-                Environment preenvironmentBuiltin = environment;
-                //System.out.println(a.kinder.getLast().asttype);
                 return(mathhelper(eval(a.kinder.getLast())));
             }
-
         } else {
             return(mathhelper(eval(a.kinder.get(0))));
         }
     }
-
+    // Hilfsfunktion zum Erstellen von Klassenobjekten anhand eines gegebenen ASTs, welcher die Klassendefinition enthält
     public Object createClassObject(AST t, boolean emptyConstructor){
-        // Default Konstruktoraufruf, wenn keiner definiert ist
 
+        // Default Konstruktoraufruf, wenn kein Konstruktoraufruf oder Parameter angegeben sind
         if (emptyConstructor){
-            System.out.println("Empty Constructor: " + t.rtype);
-
-            // Prüfen, ob wenn konstruktoren vorhanden sind, ob auch ein Konstruktor ohne Parameter vorhanden ist
+            // Prüfen, ob wenn Konstruktoren vorhanden sind, ob auch ein Konstruktor ohne Parameter vorhanden ist
             VariableClazz declarationclassVar = (VariableClazz) environment.get(t.rtype);
             Environment declarationclass = declarationclassVar.env;
 
+            // Durchsuchen der Klasse nach allen Konstruktoren
             ArrayList <Variable> constructors = new ArrayList<>();
             for (Variable v : ((Environment) declarationclass).values.values()){
                 if (v.value.getClass().getSimpleName().equals("VariableFunction") ){
@@ -634,6 +811,8 @@ public class Interpreter {
                     }
                 }
             }
+
+            // Prüfen, ob ein Konstruktor ohne Parameter vorhanden ist, wenn noch andere Konstruktoren vorhanden sind
             Object emptyConstructorVar = ((Environment) declarationclass).getClassMember(t.rtype + "[]", t.rtype);
             if (constructors.size() > 0 && emptyConstructorVar == null){
                 throw new RuntimeException("No constructor found for class: " + t.rtype);
@@ -644,78 +823,93 @@ public class Interpreter {
             Environment assignclassObjectenv = new Environment(environment);
             environment = assignclassObjectenv;
 
+            // Erstellen des Klassenobjekts
+            createClassObjectHelper(declarationclass, t.value, false);
 
-            // Iterier über die hashmap values und gib alle keys und values aus
-            for (Map.Entry<String, Variable> entry : ((Environment) declarationclass).values.entrySet()) {
-                if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
-                    eval(((VariableFunction) entry.getValue().value).ast);
-                } else {
-                    environment.define(entry.getKey(), entry.getValue().value);
-                }
-            }
-
-
+            // Konstruktoraufruf
             if (constructors.size() > 0){
                 environment = new Environment(environment);
                 environment.prevenv = assignclassObjectenv;
 
+                // Evaluation des Konstruktors
                 for (AST c : ((VariableFunction) constructors.get(0).value).ast.kinder) {
                     eval(c);
                 }
             }
 
-
-
+            // Objekt in der Umgebung speichern und Umgebung zurücksetzen
             environment = preenvironmentDeclaration;
             environment.define(t.value, assignclassObjectenv);
 
-            // Konstruktoraufruf
+        // Spezieller Konstruktoraufruf
         } else {
+            // Abrufen der Klassendefinition
             VariableClazz assignclass = (VariableClazz) environment.get(t.kinder.get(0).value);
             Environment assignclassenv = assignclass.env;
-            System.out.println(t.symbol.name);
-            Variable assignclassVar = (Variable) environment.getClassMember(t.symbol.name, t.kinder.get(0).value);
 
+            // Prüfen, ob es sich um einen normalen Konstruktoraufruf oder einen Kopykonstruktor handelt
+            // Abfrage ist der Struktur des AST geschuldet
+            Variable assignclassVar;
+            if (t.kinder.get(0).asttype.equals(AST.Types.ID)){
+                assignclassVar = (Variable) environment.get(t.kinder.get(0).value);
+            } else {
+                assignclassVar = (Variable) environment.getClassMember(t.symbol.name, t.kinder.get(0).value);
+            }
 
-
-            // Prüfen, ob es sich um den Copykonstruktor handelt - Es kann nur einen undefinierten Konstruktor geben - den default Copy Cnstruktor
+            // Prüfen, ob es sich um den Kopykonstruktor handelt
+            // Implemeniert ist nur der Default Kopykonstruktor - Andere Kopykonstruktoren werden nicht richtig erkannt
             if (assignclassVar == null){
-                System.out.println("Default Copy Constructor: " + t.kinder.get(0).value);
-                Environment oldClazz = (Environment) environment.get(t.kinder.get(1).kinder.get(0).value);
+                // Abrufen der alten zu kopierenden Klasse
+                // Prüfen verschiedener Fälle von Kombinationen, wie die Klasse übergeben werden kann
+                Environment oldClazz;
+                if (t.kinder.get(1).kinder.size() == 0){
+                    oldClazz = (Environment) environment.get(t.kinder.get(1).value);
+                } else {
+                    oldClazz = (Environment) environment.get(t.kinder.get(1).kinder.get(0).value);
+                }
 
                 // Neues Environment für die Klasse erstellen und alle Variablen und Funktionen speichern und altes speichern
                 Environment environmentBevorClassAssign = environment;
                 Environment assignclassObjectenv = new Environment(environment);
                 environment = assignclassObjectenv;
 
-                // Iterier über die hashmap values aus der des bestehenden Objekt aus dem Parameter und speicher es als neues Klassenobjekt
-                for (Map.Entry<String, Variable> entry : oldClazz.values.entrySet()) {
-                    System.out.println("Copy Constructor Copy Param: " + entry.getKey() + " - " + entry.getValue().value);
-                    // TODO - Die Variable heist nicht mehr EnvFunction sondern VariableFunction
-                    if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
-                        eval(((VariableFunction) entry.getValue().value).ast);
-                    } else {
-                        environment.define(entry.getKey(), entry.getValue().value);
+                // Erstellen des Klassenobjekts
+                createClassObjectHelper(oldClazz, t.value, false);
+
+                // Prüfen auf Polymporphie
+                // Object Slicing - Muss hier nicht geprüft werden, da der Listener schon prüft, ob die Variable, auf welche zugewiesen wird, in der Klasse vorhanden ist
+                if (!t.rtype.equals(t.kinder.get(1).rtype)){
+                    VariableClazz leftClazz = (VariableClazz) environment.get(t.kinder.get(1).rtype);
+                    if (leftClazz.parentClazz.ast.value.equals(t.rtype)){
+                        // Speichern aller Methoden der Elternklasse in der neuen Klasse
+                        for (Map.Entry<String, Variable> entry : ((Environment) leftClazz.parentClazz.env).values.entrySet()) {
+                            if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
+                                // Prüfen, ob es sich um eine abstrakte Funktion handelt - Wenn ja wird diese nicht übernommen - Dynamische Bindung
+                                VariableFunction testAbsFunc =  (VariableFunction) entry.getValue().value;
+                                if (!testAbsFunc.abstractFunction){
+                                    eval(((VariableFunction) entry.getValue().value).ast);
+                                }
+                            }
+                        }
                     }
                 }
 
+                // Objekt in der Umgebung speichern und Umgebung zurücksetzen
                 environment = environmentBevorClassAssign;
                 environment.define(t.value, assignclassObjectenv);
 
-                // Umgebung speichern
-                //Object assignclassenv = (Environment) environment.get(t.rtype);
+            // Es handelt sich um einen normalen Konstruktoraufruf
             } else {
-
-                System.out.println("AssignClass: " + t.kinder.get(0).value + " - " + assignclassVar);
+                // Abrufen des Konstruktors
                 VariableFunction constructorAssignClass = (VariableFunction) assignclassVar.value;
                 AST assignClassParams = constructorAssignClass.ast.kinder.get(0);
 
-                // Temporäre Umgebung für die Funktionsparameter erstellen
+                // Temporäre Umgebung für die Funktionsparameter des Konstruktors erstellen
                 // Environment wird erst später gesetzt, um rekursion und verschachtelte Funktionsaufrufe zu ermöglichen
+                // Parameter evaluieren
                 Environment assignClassEnvironmentConstructorEnv = new Environment(environment);
                 // Anzahl der Funktionsparameter
                 int assignClassCallParams = t.kinder.get(1).kinder.size();
-                //if (assignClassCallParams > 0) {
                 for (int i = 0; i < assignClassCallParams; i++) {
                     Object funcCallArg = eval(t.kinder.get(1).kinder.get(i));
                     // Parameter auswerten
@@ -735,76 +929,77 @@ public class Interpreter {
                         assignClassEnvironmentConstructorEnv.define(assignClassParams.kinder.get(i).value, funcCallArg);
                     }
                 }
-                //}
 
+                // Neues Environment für die Klasse erstellen und alle Variablen und Funktionen speichern und altes zurücksetzen
                 Environment environmentBevorClassAssign = environment;
                 Environment assignclassObjectenv = new Environment(environment);
                 environment = assignclassObjectenv;
 
 
-
-
-                // TODO - Hier Vererbung implementieren - Funktionen und Methoden der Basisklasse in diese mit übernehmen
-                //  Prüfen, welche Objekte und FUnktionen wann und wie aus der Basisklasse übernommen werden, und welche
-                //  überschrieben werden
-
-                //
-                // TODO - Basiskonstruktor des Parent aufrufen und so alles erstellen
-                //
-
+                // Prüfen, ob dies eine abgeleitete Klasse ist
+                int parentConstructors = 0;
                 if (assignclass.parentClazz != null){
+                    // Abrufen des Default Konstruktors der Basisklasse
                     VariableClazz parent = assignclass.parentClazz;
-                    for (Map.Entry<String, Variable> entry : ((Environment) parent.env).values.entrySet()) {
-                        if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
-                            // Prüft, ob es sich um eine abstrakte Funktion handelt und ob diese in der ableitenden Klasse implementiert wurde
-                            if (((VariableFunction) entry.getValue().value).abstractFunction) {
-                                if (environment.getClassMember(entry.getKey(), t.kinder.get(0).value) == null) {
-                                    throw new RuntimeException("Abstract Function " + entry.getKey() + " not implemented in class " + t.value);
-                                }
-                            } else {
-                                eval(((VariableFunction) entry.getValue().value).ast);
-                            }
-                        } else {
-                            environment.define(entry.getKey(), entry.getValue().value);
-                        }
-                    }
+                    createClassObjectHelper(parent.env, t.value, true);
 
                     // Suchen des Default Konstruktors der Basisklasse
                     Variable parentConstructor = (Variable) parent.env.getClassMember(parent.ast.value + "[]", parent.ast.value);
 
+                    // Da keine Initialisierungsliste implementiert ist muss ein Default Konstruktor vorhanden sein werden dann aufgerufen wird
+                    // Prüfen, ob ein Default Konstruktor Definiert ist
+                    if (parentConstructor == null){
+                        // Prüfen ob andere Konstruktoren vorhanden sind
+                        // Wenn nein dann wird der Defaultkonstruktor aufgerufen
+                        if (parentConstructors == 0){
+                            eval(parent.ast.kinder.get(0));
+                        // Error werfen, wenn kein Defaultkonstruktor vorhanden ist
+                        } else {
+                            throw new RuntimeException("No default constructor found for parent class: " + parent.ast.value);
+                        }
                     // Aufrufen des Basiskonstruktors der Basisklasse
-                    for (AST c : ((VariableFunction) parentConstructor.value).ast.kinder) {
-                        eval(c);
-                    }
-                }
-
-                // Iterier über die hashmap values und gib alle keys und values aus
-                for (Map.Entry<String, Variable> entry : ((Environment) assignclassenv).values.entrySet()) {
-                    if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
-                        // TODO - Prüfen ob abstrakte Funktionen implementiert wurden - Auch in der Basisklasse
-                            VariableFunction testAbsFunc =  (VariableFunction) entry.getValue().value;
-                            if (testAbsFunc.abstractFunction){
-                                throw new RuntimeException("Abstract Function " + entry.getKey() + " not implemented in class " + t.value);
-                            }
-                        eval(((VariableFunction) entry.getValue().value).ast);
                     } else {
-                        environment.define(entry.getKey(), entry.getValue().value);
+                        for (AST c : ((VariableFunction) parentConstructor.value).ast.kinder) {
+                            eval(c);
+                        }
                     }
                 }
 
+                // Erstellen des Klassenobjekts - Erneute implemnierungen von Methoden werden von denen von der Elternklasse überschrieben
+                createClassObjectHelper(assignclassenv, t.value, false);
+
+                // Umgebung für den Konstruktor setzen
                 environment = assignClassEnvironmentConstructorEnv;
                 environment.prevenv = assignclassObjectenv;
 
+                // Ausführen/Evaluieren des Konstruktors
                 for (AST c : constructorAssignClass.ast.kinder) {
                     eval(c);
                 }
 
+                // Objekt in der Umgebung speichern und Umgebung zurücksetzen
                 environment = environmentBevorClassAssign;
                 environment.define(t.value, assignclassObjectenv);
             }
         }
-        System.out.println("ClassObject erstellt: " + t.value);
         return environment.get(t.value);
     }
 
+    // Hilfsfunktion zum Hinzufügen von Variablen und Funktionen in das neue Objektenvironment
+    void createClassObjectHelper(Environment env, String klasse, boolean parent){
+        // Iterieren über die hashmap der Klassendefinition und anschließendes Evaluieren der gespeicherten Werte in der neuen Umgebung
+        for (Map.Entry<String, Variable> entry : ((Environment) env).values.entrySet()) {
+            if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
+                VariableFunction testAbsFunc =  (VariableFunction) entry.getValue().value;
+                if (testAbsFunc.abstractFunction && !parent){
+                    throw new RuntimeException("Abstract Function " + entry.getKey() + " not implemented in class " + klasse);
+                }
+                // Speichern der Funktionsfedinitionen in dem Objekt
+                // => Existiert die Funktion bereits in der Basisklasse wird diese überschrieben
+                eval(((VariableFunction) entry.getValue().value).ast);
+            } else {
+                environment.define(entry.getKey(), entry.getValue().value);
+            }
+        }
+    }
 }

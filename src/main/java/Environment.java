@@ -43,9 +43,7 @@ public class Environment {
 
     public Object getClassMember(String key, String className) {
         Variable value = values.get(className);
-        //System.out.println("ClassMember in getClassMember: " + key + " - " + className + " - " + value);
         if (value != null) {
-            //System.out.println("ClassMember: " + key + " - " + className + " - " + value + " - " + value.value.getClass().getName());
             if (value.value instanceof VariableClazz) {
                 VariableClazz var = (VariableClazz) value.value;
                 return var.env.values.get(key);
@@ -64,7 +62,6 @@ public class Environment {
     public Variable getClassMemberVariable(String key, String className) {
         Variable value = values.get(className);
         if (value != null) {
-            System.out.println(value.getClass());
             Environment env = (Environment) value.value;
             return env.values.get(key);
         } else if (prevenv != null) {

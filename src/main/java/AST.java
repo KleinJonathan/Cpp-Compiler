@@ -38,8 +38,6 @@ public class AST {
 
         ASSIGNARRAYELEMENT,
         ARRAYSIZE,
-        INCARRAY,
-        DECARRAY,
         ARRAYELEMENT,
 
         // Funktionen

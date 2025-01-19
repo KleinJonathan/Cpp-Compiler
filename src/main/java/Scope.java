@@ -1,6 +1,8 @@
 // Imports
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 // Scope Klasse zum Verwalten von Symbolen
 public class Scope {
@@ -8,8 +10,13 @@ public class Scope {
     public Map<String, Symbol> scope = new LinkedHashMap<>();
     public Scope prev;
 
+    public List<Scope> children = new ArrayList<>();
+
     public Scope(Scope p){
         this.prev = p;
+        if (p != null) {
+            p.children.add(this);
+        }
     }
 
     // Name - Type / Binden von Symbolen an den Scope
@@ -47,4 +54,52 @@ public class Scope {
         }
         System.out.println("}");
     }
+
+
+
+
+    public void printAll() {
+        printIndented(0);
+    }
+
+
+    // Rekursive Hilfsmethode zur eingerückten Ausgabe
+    private void printIndented(int indentLevel) {
+        // Ausgabe des aktuellen Scopes mit entsprechender Einrückung
+        String indent = "    ".repeat(indentLevel); // 4 Leerzeichen pro Ebene
+        System.out.println(indent + "Scope-Level " + indentLevel + " : {");
+        for (Map.Entry<String, Symbol> entry : scope.entrySet()) {
+            System.out.println(indent + "    " + entry.getKey() + " : " + entry.getValue().type.getName() + " - " + entry.getValue().getClass().getSimpleName());
+        }
+        System.out.println(indent + "}");
+
+        // Rekursiver Aufruf für alle Kind-Scopes
+        for (Scope child : children) {
+            child.printIndented(indentLevel + 1);
+        }
+    }
+
+    // Optional: Überschreiben von toString(), falls benötigt
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        printIndentedToBuilder(sb, 0);
+        return sb.toString();
+    }
+
+    private void printIndentedToBuilder(StringBuilder sb, int indentLevel) {
+        String indent = "    ".repeat(indentLevel);
+        sb.append(indent).append("Scope-Level ").append(indentLevel).append(" : {\n");
+        for (Map.Entry<String, Symbol> entry : scope.entrySet()) {
+            sb.append(indent).append("    ").append(entry.getKey()).append(" : ")
+                    .append(entry.getValue().type.getName()).append(" - ")
+                    .append(entry.getValue().getClass().getSimpleName()).append("\n");
+        }
+        sb.append(indent).append("}\n");
+
+        for (Scope child : children) {
+            child.printIndentedToBuilder(sb, indentLevel + 1);
+        }
+    }
+
 }

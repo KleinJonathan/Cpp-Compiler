@@ -8,7 +8,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 public class Main {
   public static void main(String... args) throws IOException {
     // Einlesen der Datei
-    File file = new File("./src/main/java/cpp/input.cpp");
+    File file = new File("./src/main/java/cpp/präsentation.cpp");
     // Buffer zum lesen der Datei
     BufferedReader br = new BufferedReader(new FileReader(file));
     StringBuilder sb = new StringBuilder();
@@ -37,6 +37,9 @@ public class Main {
 
       AST ast = listen.getAST();
       ast.printAST(ast, "");
+
+      Scope scope = listen.getScope();
+      scope.printAll();
 
       // Interpreter zum interpretieren des AST
       System.out.println("\n\nINTERPRETER: \n");
