@@ -203,7 +203,7 @@ public class Interpreter {
                         if (c.asttype == AST.Types.FUNCTION_DEF) {
                             SymbolFunction funcSymbolFuncDef = (SymbolFunction) c.symbol;
                             // Prüfen, ob es sich um eine abstrakte Funktion handelt - Diese wird dann in der Unterklasse überschrieben
-                            if (funcSymbolFuncDef.abstractFunction){
+                            if (!funcSymbolFuncDef.abstractFunction){
                                 eval(c);
                             }
                         }

@@ -60,9 +60,7 @@ int main() {
     print_int(a);
 
     // Hier sieht man, dass x die Funktion aus A aufruft und das Erbebniss resultA verändert
-    print_int(y.resultA);
-    x.math(1,1,1);
-    print_int(y.resultA);
+    print_int(x.math(1,1,1));
 
     return 0;
 }

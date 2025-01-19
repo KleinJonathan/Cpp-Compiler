@@ -79,8 +79,9 @@ AST - prefix - ASTType - Value - rtype
 Dort kann man recht viel sehen==
 # Ablauf
 - Begrüßung 
-- Vorstellung Struktur 
+- Vorstellung Klassenstruktur 
 - Vorstellung Programm - Grob erklären was passiert 
+- Grammatik 
 - Klassendefinition und Aufbau - Alan
 	- Listener
 		- 587 - enterClassdef !!!

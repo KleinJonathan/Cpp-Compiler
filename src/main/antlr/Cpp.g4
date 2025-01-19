@@ -14,9 +14,10 @@ stmt                : declfunc ';'                                              
                     | whileconn openscope body closescope                                           # whileblock
                     | builtin '(' expr ')' ';'                                                      # builtinstmt
                     | classdef                                                                      # classsstm
-                    | openscope (stmt | expr ';' )+ closescope                                           # block
+                    | openscope (stmt | expr ';' )+ closescope                                      # block
                     | RETURN expr? ';'                                                              # return
                     ;
+
 //body                : (expr | stmt)+;
 body                : (stmt | expr ';')+;
 ////
@@ -70,7 +71,7 @@ assignold           : (assignvar | assignarrayelement | assignclassvar | assignn
 
 
 // Klassen und Konstruktoren
-classdef            : 'class' ID vererbung? '{' 'public' ':' (constructor | destruct /*| overridefunc | abstractfunc*/ | stmt)* '}' ';'
+classdef            : 'class' ID vererbung? '{' 'public' ':' (constructor | destruct | stmt)* '}' ';'
                     ;
 //Konstruktor hat keine Rückgabe == Unterscheidung zu Funktionen
 constructor         : ID '(' defparamlist ')'  openscope body? closescope   ';'?
