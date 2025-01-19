@@ -7,29 +7,16 @@ quellen:
 ![[Pasted image 20241214205821.png|600]]
 
 
+# Anmerkungen
+- In Klassendefinitionen müssen die Variablendefinitionen vor den Funktionen stehen, in welchen sie genutzt werden
 
-### Fehler/Fehlend oder Prüfen
-- Klassen
-	- Destruktor - Weglassen? 
-	- ```Student &s = Student()``` => Geht noch nicht 
-- Funktionen
-	- Rückgabewert von Funktionen ref bsp: int &fkt1(const int &, const char);
-- ```int &fkt1(const int &, const char a);```
-- THIS noch nicht implementiert 
-- ARRAYS funktionieren noch nicht zufriedenstellend - Vor allem Mehrdimensionale nicht - Objektarrays
-  ```Person x[] = {Person(10, 20), Person(20, 30), Person(30, 40)};``` => Wird nicht erkannt 
-- Zugreifen auf Objekteigenschaften in Methoden und Klassenmethoden - ```B(B& rhs) { value = rhs.value; }```
-- This muss mit eingebaut werden um dinge auflösen zu können oder um Objekte zu vergleichen 
-- = Operator in Klassen 
-- Custom Kopy Konstruktoren 
-- Funktion Parameter Default werte 
-
-# TODOs
-- Fehlerbehandungen und Null checks 
-- Funktionen und wiederholenden Code auslagern 
-- System.out.println - Prüfen und unnötige löschen
-- Bei allen Expressions prüfen, ob dort auch die Werte zurückgegeben werden. BSP Assignold liefert neuen Wert zurück
-- Alle Kommentare und ausgaben auf Englisch umschrieben 
+# Fehlerhafte Teile
+- Arrays aus Objekten funktionieren nicht
+- Custom Construktoren können zu Konflikten führen
+- This wurde nicht implementiert
+- Zuweisungsoperator für Klassen gehen nicht
+- Destruktoren wurden im Interpreter nicht implementiert
+- Default Funktionsparameter wurden nicht implementiert
 
 # Verbesserungen 
 - Kann in der Klasse AST der rtype auch über den Konstruktor gesetzt werden 
@@ -47,11 +34,6 @@ quellen:
 - Einfach-Vererbung
 - Polymorphie (dynamisch, statisch)
 - Eingebaute Funktionen: `print_bool`, `print_int`, `print_char` (Ausgabe eines Werts des jeweiligen Typs auf der Konsole)
-
-
-
-
-
 
 
 
@@ -126,16 +108,7 @@ Dort kann man recht viel sehen==
 			- Wie werden Referenzen gehandhabt und gespeichert? Was passiert, wenn ich diese änder? 
 			  Dynamische Polymorphie hier erklären 
 
-Rückgabe von Funktionen mit Expressions 
-
-
-
-# Einschränkungen in die Abgabe mit reinschreiben. 
-- Parameter müssen in Klassen, genauso wie im restlichen Codeablauf, vor ihrer ersten Verwendung Deklariert werden. Das heißt, bevor ich auf eine Variabe im Konstruktor zum Beispiel zugreife, muss diese in der Klasse schon bekannt sein 
-- Variablen werden zufällig initialisiert, da dies in c++ genauso ist (Man weis nicht was in der Variable steht)
-
-
-
+Rückgabe von Funktionen mit Expressions
 
 
 

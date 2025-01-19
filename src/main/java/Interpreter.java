@@ -750,7 +750,7 @@ public class Interpreter {
             case "String":
                 Object obvar = environment.get((String) ob);
                 if (obvar == null){
-                    System.out.println("Variable " + ob + " not defined - Error in Mathhelper");
+                    //System.out.println("Variable " + ob + " not defined - Error in Mathhelper");
                     return 0;
                 }
                 // Umwandlung von Variableinhalten in Integer
@@ -763,7 +763,7 @@ public class Interpreter {
             case "Character": ob = (int) (Character) ob; break;
             case "Boolean": ob = (Boolean) ob ? 1 : 0; break;
             case "Variable": ob = ((Variable) ob).value; break;
-            default: System.out.println("Default case in Mathhelper with Type: " + ob.getClass().getSimpleName()); break;
+            default: /*System.out.println("Default case in Mathhelper with Type: " + ob.getClass().getSimpleName());*/ break;
         }
         return (Integer) ob;
     }
@@ -779,8 +779,8 @@ public class Interpreter {
                 // Zugriff auf einfache ID
                 Object builtinVar = environment.getClassMember(a.kinder.get(1).value, a.kinder.get(0).value);
                 if (builtinVar == null){
-                    System.out.println("Variable " + a.kinder.get(1).value + " not defined in class " + a.kinder.get(0).value +
-                            " - Error in builtinhelper");
+                    /*System.out.println("Variable " + a.kinder.get(1).value + " not defined in class " + a.kinder.get(0).value +
+                            " - Error in builtinhelper");*/
                     return 0;
                 } else {
                     return mathhelper((((Variable) environment.getClassMember((a.kinder.get(1).value).toString(), a.kinder.get(0).value)).value));
@@ -873,25 +873,31 @@ public class Interpreter {
                 Environment assignclassObjectenv = new Environment(environment);
                 environment = assignclassObjectenv;
 
-                // Erstellen des Klassenobjekts
-                createClassObjectHelper(oldClazz, t.value, false);
-
                 // Prüfen auf Polymporphie
                 // Object Slicing - Muss hier nicht geprüft werden, da der Listener schon prüft, ob die Variable, auf welche zugewiesen wird, in der Klasse vorhanden ist
-                if (!t.rtype.equals(t.kinder.get(1).rtype)){
+                if (!t.rtype.equals(t.kinder.get(1).rtype) && t.kinder.get(1).rtype != null){
                     VariableClazz leftClazz = (VariableClazz) environment.get(t.kinder.get(1).rtype);
-                    if (leftClazz.parentClazz.ast.value.equals(t.rtype)){
-                        // Speichern aller Methoden der Elternklasse in der neuen Klasse
-                        for (Map.Entry<String, Variable> entry : ((Environment) leftClazz.parentClazz.env).values.entrySet()) {
-                            if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")){
-                                // Prüfen, ob es sich um eine abstrakte Funktion handelt - Wenn ja wird diese nicht übernommen - Dynamische Bindung
-                                VariableFunction testAbsFunc =  (VariableFunction) entry.getValue().value;
-                                if (!testAbsFunc.abstractFunction){
-                                    eval(((VariableFunction) entry.getValue().value).ast);
+
+                    // Erstellen des Klassenobjekts
+                    createClassObjectHelper(oldClazz, t.value, true);
+
+                    if (leftClazz != null) {
+                        if (leftClazz.parentClazz.ast.value.equals(t.rtype)) {
+                            // Speichern aller Methoden der Elternklasse in der neuen Klasse
+                            for (Map.Entry<String, Variable> entry : ((Environment) leftClazz.parentClazz.env).values.entrySet()) {
+                                if (entry.getValue().value.getClass().getSimpleName().equals("VariableFunction")) {
+                                    // Prüfen, ob es sich um eine abstrakte Funktion handelt - Wenn ja wird diese nicht übernommen - Dynamische Bindung
+                                    VariableFunction testAbsFunc = (VariableFunction) entry.getValue().value;
+                                    if (!testAbsFunc.abstractFunction) {
+                                        eval(((VariableFunction) entry.getValue().value).ast);
+                                    }
                                 }
                             }
                         }
                     }
+                } else {
+                    // Erstellen des Klassenobjekts
+                    createClassObjectHelper(oldClazz, t.value, false);
                 }
 
                 // Objekt in der Umgebung speichern und Umgebung zurücksetzen

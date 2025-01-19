@@ -9,8 +9,6 @@ class A {
         //A(int x) { aval = x; }
         //A() { aval = 1212; }
 
-        virtual int math(int k) = 0;
-
         virtual int math(int i, int j, int k){
             resultA = i+j;
             return i+j;

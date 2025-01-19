@@ -299,7 +299,9 @@ public class MyListener extends CppBaseListener {
                         throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' falsche Typen");
                     }
                 } else {
-                    throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' falsche Typen");
+                    if (!acc.rtype.equals(acc.kinder.get(0).rtype)) {
+                        throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' falsche Typen");
+                    }
                 }
             } else {
                 if (acc.kinder.get(0).rtype != null && !acc.kinder.get(0).rtype.equals(scope.resolve(ctx.ID().getText()).type.getName())){
@@ -508,7 +510,9 @@ public class MyListener extends CppBaseListener {
                 acc.addChild(a);
                 acc = a;
                 AST b = new AST(className, AST.Types.CLASS, acc, scope, null, false);
+                b.rtype = className;
                 acc.addChild(b);
+                acc.rtype = className;
             }
         } else {
             throw new RuntimeException("Variable: '" + ctx.ID().getText() + "' bereits declariert oder Klasse: '" + className + "' nicht gefunden");
@@ -566,18 +570,25 @@ public class MyListener extends CppBaseListener {
         // Prüfen, ob die Variable in der Klasse existiert
         Symbol member = clazzSymbol.resolveMember(ctx.ID(1).getText());
         if (member == null) {
-            throw new RuntimeException("Member: '" + ctx.ID(1).getText() + "' nicht gefunden in Objekt '" + ctx.ID(0).getText() + "'");
+            if (clazzSymbol.parentClazz != null) {
+                Symbol parent = scope.resolve(clazzSymbol.parentClazz.name);
+                member = ((SymbolClazz) parent).resolveMember(ctx.ID(1).getText());
+            }
+
+            if (member == null) {
+                throw new RuntimeException("Member: '" + ctx.ID(1).getText() + "' nicht gefunden in Objekt '" + ctx.ID(0).getText() + "'");
+            }
         }
+
         // Erstellen des Knotens und hinzufügen zum AST
         AST b = new AST(ctx.ID(0).getText(), AST.Types.CLASS, acc, scope, scope.resolve(ctx.ID(0).getText()), false);
         acc.addChild(b);
         AST a = new AST(ctx.ID(1).getText(), AST.Types.ID, acc, scope, null, false);
         acc.addChild(a);
-        //a.rtype = member.type.getName();
+        a.rtype = member.type.getName();
 
     }
     public void exitClassvar(CppParser.ClassvarContext ctx) {
-        System.out.println("ID: " + ctx.getText());
     }
 
 
