@@ -57,7 +57,7 @@ int main() {
     y.math(1,1,1);
     print_int(a);
 
-    // Hier sieht man, dass die Funktion von B verwendet wird - Also dynamische polymorphie
+    // Hier sieht man, dass die Funktion von B verwendet wird - Also statische polymorphie
     print_int(x.math(1,1,1));
 
     return 0;

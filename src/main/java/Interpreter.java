@@ -176,7 +176,6 @@ public class Interpreter {
             // Ermitteln, ob es sich um eine Referenz auf eine Variable oder auf eine Klasseninstanz handelt
             if (t.kinder.size() == 1){
                 // Prüfen, ob es sich um eine Klasseninstanz handelt
-                // => Dynamische Polymorphie
                 if (environment.get(t.symbol.type.name) instanceof VariableClazz) {
                     // Ermitteln der Klasse
                     VariableClazz refPolyClazz = (VariableClazz) environment.get(t.symbol.type.name);

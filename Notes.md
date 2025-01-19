@@ -100,8 +100,6 @@ Dort kann man recht viel sehen==
 			- Hier kann auch die Referenz erklärt werden 
 		- Objekterstellung und Auflösen von Klassenattributen 
 	- Interpreter
-		- 326 Assignclass !!!!
-			- Wie werden neue Instanzen
 		- 796 - createClassObject 
 			- Wie werden Objekte erstellt und gespeichert? Konstruktoraufrufe 
 		- 172 - Referenzen !!!!
