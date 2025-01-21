@@ -12,13 +12,14 @@ stmt                : declfunc ';'                                              
                     | assignold ';'                                                                 # assign2
                     | ifelseblock                                                                   # ifelseblock1
                     | whileconn openscope body closescope                                           # whileblock
-                    | builtin '(' expr (',' expr)* ')' ';'                                          # builtinstmt
+                    | builtin '(' expr ')' ';'                                                      # builtinstmt
                     | classdef                                                                      # classsstm
-                    | openscope stmt+ closescope                                                    # block
+                    | openscope (stmt | expr ';' )+ closescope                                      # block
                     | RETURN expr? ';'                                                              # return
-                    | expr ';'                                                                      # exprstmt
                     ;
-body                : stmt+;
+
+//body                : (expr | stmt)+;
+body                : (stmt | expr ';')+;
 ////
 ////
 
@@ -53,16 +54,15 @@ arraysize           : expr;
 assignclassvar      : ID'.'ID SET expr
                     | ID '[' expr ']' '.' ID SET expr
                     ;
-assignnewclass      : REF ID                        // Student &s = Student();
-                    | ID
+assignnewclass      : ID
                     | ID SET callfunc                 //Student s = Student();
                     | ID '(' callparamlist ')'              // Student s(5);
                     ;
 
 declnew             : basetype (declarray | declvar)(',' (declarray | declvar))*
                     ;
-assignnew           : const? basetype REF? (assignvar | assignnewarray | assignnewclass | defrefvar)
-                        (',' (assignvar | assignnewarray | assignnewclass | defrefvar))*
+assignnew           : const? basetype REF? (assignvar | assignnewarray | assignnewclass)
+                        (',' (assignvar | assignnewarray | assignnewclass))*
                     ;
 assignold           : (assignvar | assignarrayelement | assignclassvar | assignnewclass)
                         (',' (assignvar | assignarrayelement | assignclassvar | assignnewclass))*;
@@ -71,7 +71,7 @@ assignold           : (assignvar | assignarrayelement | assignclassvar | assignn
 
 
 // Klassen und Konstruktoren
-classdef            : (EXPLIZIT | ABSTRACT)? 'class' ID vererbung? openscope (constructor | destruct /*| overridefunc | abstractfunc*/ | stmt)* closescope ';'
+classdef            : 'class' ID vererbung? '{' 'public' ':' (constructor | destruct | stmt)* '}' ';'
                     ;
 //Konstruktor hat keine Rückgabe == Unterscheidung zu Funktionen
 constructor         : ID '(' defparamlist ')'  openscope body? closescope   ';'?
@@ -96,13 +96,11 @@ vererbung           : ':' 'public'? ID
 // Function
 abstractfunc        : const? '=' NUM ';'?; // Hier wirde NUM gewählt, da bei der direkten Eongabe von 0 gab es Probleme beim Lexer
 declfunc            : VIRTUAL? (basetype REF?| VOID) ID '(' defparamlist ')' abstractfunc? ';'? ;
-deffunc             : (basetype REF?| VOID) ID '(' defparamlist ')' (const? OVERRIDE)? openscope body closescope ';'?       # funcdef
-                    | (basetype REF?| VOID)? ID'::'ID '(' defparamlist ')' openscope body closescope  ';'?                  # classfunc
+deffunc             : VIRTUAL? (basetype REF?| VOID) ID '(' defparamlist ')' (const? OVERRIDE)? openscope body closescope ';'?       # funcdef
                     ;
 // Es kann nicht unterschieden werden zwischen einem Funktionsaufruf und einem Konstruktoraufruf, der ja auch eine Funktion ist
 callfunc            : ID '(' callparamlist ')'
                     | ID'.'ID '(' callparamlist ')'
-                    | ID'::'ID '(' callparamlist ')'
                     ;
 
 defparamlist        : ((defparam)(',' defparam)* | );
@@ -121,8 +119,8 @@ builtin             : 'print_bool'                                              
 
 // IF ELSE WHILE
 ifelseblock         : ifconn ifblock elseblock?;
-ifblock             : openscope body? closescope;
-elseblock           : ELSE (ifelseblock | openscope body? closescope);
+ifblock             : openscope body closescope;
+elseblock           : ELSE (ifelseblock | openscope body closescope);
 ifconn              : IF '(' (expr | decl | assignnew | assignold | assignclassvar) (com expr)* ')'
                     ;
 whileconn           : WHILE '(' (expr | decl | assignnew | assignold | assignclassvar) (com expr)* ')'
@@ -133,19 +131,20 @@ whileconn           : WHILE '(' (expr | decl | assignnew | assignold | assigncla
 
 // Expression
 expr                : expr '*' expr                                                             # mul
-                    | ID '*=' expr                                                            # muleq
+                    | ID '*=' expr                                                              # muleq
                     | expr '/' expr                                                             # div
-                    | ID '/=' expr                                                            # diveq
+                    | ID '/=' expr                                                              # diveq
                     | expr '+' expr                                                             # add
-                    | ID '+=' expr                                                            # addeq
-                    | ID '++'                                                                 # inc
+                    | ID '+=' expr                                                              # addeq
+                    | ID '++'                                                                   # inc
                     | expr '-' expr                                                             # sub
-                    | ID '-=' expr                                                            # subeq
-                    | ID '--'                                                                 # dec
+                    | ID '-=' expr                                                              # subeq
+                    | ID '--'                                                                   # dec
                     | expr com expr                                                             # compare
                     | callfunc                                                                  # call
-                    | ID'.'ID                                                                   # classvar
+                    | ID '[' expr ']' '.' ID                                                    # classarrayelem
                     | ID '[' expr ']'                                                           # arrayelem
+                    | ID'.'ID                                                                   # classvar
                     | NUM                                                                       # num
                     | ID                                                                        # id
                     | CHAR                                                                      # char
@@ -201,7 +200,6 @@ TYPE        : 'char'
             | 'bool'
             ;
 EXPLIZIT    : 'explicit';
-ABSTRACT    : 'abstract';
 REF         : '&';
 NUM         : [0-9]+;
 ID          : [a-zA-Z_][a-zA-Z0-9_]*;
