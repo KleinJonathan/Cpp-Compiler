@@ -1,4 +1,4 @@
-# Rudimentärer Cpp Compiler Projektarbeit - Compilerbau 3. Semester
+# Rudimentärer Cpp Compiler mit Antlr und Java - Projektarbeit - Compilerbau 3. Semester
 Dieses Projekt ist eine Semesterarbeit für das Modul Compilerbau im 3. Semester des Studiengangs Informatik an der Hochschule Bielefeld.
 
 ---
